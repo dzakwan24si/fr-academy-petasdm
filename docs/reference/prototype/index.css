@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+@theme {
+  --color-corporate-dark: #004D40; /* Dark Teal */
+  --color-corporate-light: #2E7D32; /* Leaf Green */
+  --color-panel-bg: #F8FAFC; /* Off-white */
+}
+
+/* Base resets to ensure full screen map works well */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Kustomisasi scrollbar modern */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+    --color-corporate-dark: #004D40;
+    --color-corporate-light: #2E7D32;
+    --color-panel-bg: #F8FAFC;
+    --color-app-bg: #F7F8FA;
+}
