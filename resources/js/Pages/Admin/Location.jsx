@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Head, usePage, router, useForm } from '@inertiajs/react';
+import AppLayout from '@/Layouts/AppLayout';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { LeafletIcon } from '@/Components/LeafletIcon'; // Custom icon to avoid default image issue
@@ -107,7 +108,7 @@ export default function LocationAdmin({ locations }) {
     };
 
     return (
-        <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <AppLayout title="Master Lokasi">
             <Head title="Koordinat Lokasi" />
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-corporate-dark">Koordinat Lokasi</h1>
@@ -166,8 +167,8 @@ export default function LocationAdmin({ locations }) {
                                 <td className="p-2">{loc.latitude ? `${loc.latitude}, ${loc.longitude}` : '-'}</td>
                                 <td className="p-2">
                                     {loc.latitude ? 
-                                        <span className="text-green-600 bg-green-50 px-2 py-1 rounded text-xs">Ada</span> : 
-                                        <span className="text-red-600 bg-red-50 px-2 py-1 rounded text-xs">Belum</span>}
+                                        <span className="text-white bg-green-600 px-3 py-1 rounded-full text-xs font-semibold">Ada</span> : 
+                                        <span className="text-white bg-red-600 px-3 py-1 rounded-full text-xs font-semibold">Belum</span>}
                                 </td>
                                 <td className="p-2">
                                     <button onClick={() => openEdit(loc)} className="text-blue-600 hover:underline">Edit</button>
@@ -210,6 +211,6 @@ export default function LocationAdmin({ locations }) {
                     </div>
                 </div>
             )}
-        </div>
+        </AppLayout>
     );
 }

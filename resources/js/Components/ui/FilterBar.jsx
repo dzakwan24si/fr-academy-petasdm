@@ -150,6 +150,92 @@ export default function FilterBar({ isTrainingPage = false }) {
                         onChange={(v) => updateFilter('gender', v)}
                     />
                 </div>
+                
+                {isTrainingPage && (
+                    <>
+                        <div className="flex flex-col gap-1">
+                            <label className="text-xs text-gray-500">Tahun</label>
+                            <select 
+                                value={filters.year} 
+                                onChange={(e) => updateFilter('year', e.target.value)}
+                                className="text-sm border-gray-200 rounded-lg focus:ring-amber-500 focus:border-amber-500 bg-gray-50"
+                            >
+                                <option value="">Semua Tahun</option>
+                                {[...Array(10)].map((_, i) => {
+                                    const y = new Date().getFullYear() - i;
+                                    return <option key={y} value={y}>{y}</option>;
+                                })}
+                            </select>
+                        </div>
+                        
+                        <div className="flex flex-col gap-1">
+                            <label className="text-xs text-gray-500">Bulan</label>
+                            <select 
+                                value={filters.month} 
+                                onChange={(e) => updateFilter('month', e.target.value)}
+                                className="text-sm border-gray-200 rounded-lg focus:ring-amber-500 focus:border-amber-500 bg-gray-50"
+                            >
+                                <option value="">Semua Bulan</option>
+                                {['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map(m => (
+                                    <option key={m} value={m}>{m}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-xs text-gray-500 font-bold text-amber-600">Status NIK</label>
+                            <select 
+                                value={filters.nik_status} 
+                                onChange={(e) => updateFilter('nik_status', e.target.value)}
+                                className="text-sm border-amber-200 rounded-lg focus:ring-amber-500 focus:border-amber-500 bg-amber-50/30"
+                            >
+                                <option value="">Semua Status</option>
+                                <option value="terhubung">Terhubung (Employee ID ✓)</option>
+                                <option value="tidak_terhubung">Tidak Terhubung</option>
+                                <option value="kosong">Kosong</option>
+                                <option value="rusak">Rusak (Corrupt)</option>
+                                <option value="tidak_valid">Tidak Valid (Not Found)</option>
+                            </select>
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-xs text-gray-500">Golongan</label>
+                            <MultiSelect 
+                                placeholder="Semua Golongan"
+                                options={[{id: 'STAF', name: 'STAF'}, {id: 'NON STAF', name: 'NON STAF'}]}
+                                valueKey="id" labelKey="name"
+                                value={filters.job_category}
+                                onChange={(v) => updateFilter('job_category', v)}
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-xs text-gray-500">Tipe Reguler</label>
+                            <select 
+                                value={filters.is_regular} 
+                                onChange={(e) => updateFilter('is_regular', e.target.value)}
+                                className="text-sm border-gray-200 rounded-lg focus:ring-amber-500 focus:border-amber-500 bg-gray-50"
+                            >
+                                <option value="">Semua</option>
+                                <option value="1">Reguler</option>
+                                <option value="0">Non Reguler</option>
+                            </select>
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-xs text-gray-500">Tipe Eksternal</label>
+                            <select 
+                                value={filters.is_internal} 
+                                onChange={(e) => updateFilter('is_internal', e.target.value)}
+                                className="text-sm border-gray-200 rounded-lg focus:ring-amber-500 focus:border-amber-500 bg-gray-50"
+                            >
+                                <option value="">Semua</option>
+                                <option value="1">Internal</option>
+                                <option value="0">Eksternal</option>
+                            </select>
+                        </div>
+                    </>
+                )}
             </div>
 
             <div className="flex gap-2 mt-4 flex-wrap">
@@ -176,12 +262,20 @@ export default function FilterBar({ isTrainingPage = false }) {
                 {filters.employment_type.map(v => (
                     <Chip key={`emp-${v}`} label={`Status: ${v}`} onRemove={() => updateFilter('employment_type', filters.employment_type.filter(x => x !== v))} />
                 ))}
-                {filters.generation.map(v => (
+                {filters.generation?.map(v => (
                     <Chip key={`gen-${v}`} label={`Gen: ${v}`} onRemove={() => updateFilter('generation', filters.generation.filter(x => x !== v))} />
                 ))}
-                {filters.gender.map(v => (
+                {filters.gender?.map(v => (
                     <Chip key={`gndr-${v}`} label={`Gender: ${v}`} onRemove={() => updateFilter('gender', filters.gender.filter(x => x !== v))} />
                 ))}
+                {filters.year && <Chip label={`Tahun: ${filters.year}`} onRemove={() => updateFilter('year', '')} />}
+                {filters.month && <Chip label={`Bulan: ${filters.month}`} onRemove={() => updateFilter('month', '')} />}
+                {filters.nik_status && <Chip label={`NIK: ${filters.nik_status}`} onRemove={() => updateFilter('nik_status', '')} />}
+                {filters.job_category?.map(v => (
+                    <Chip key={`cat-${v}`} label={`Gol: ${v}`} onRemove={() => updateFilter('job_category', filters.job_category.filter(x => x !== v))} />
+                ))}
+                {filters.is_regular !== '' && <Chip label={`Tipe: ${filters.is_regular === '1' ? 'Reguler' : 'Non Reguler'}`} onRemove={() => updateFilter('is_regular', '')} />}
+                {filters.is_internal !== '' && <Chip label={`Asal: ${filters.is_internal === '1' ? 'Internal' : 'Eksternal'}`} onRemove={() => updateFilter('is_internal', '')} />}
             </div>
         </div>
     );

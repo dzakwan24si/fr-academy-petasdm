@@ -369,36 +369,43 @@ Hanya memakai baris training yang ter-link ke karyawan (`employee_id` terisi). T
 
 ### 7.7 Direktori Karyawan (`/karyawan`)
 - Tabel server-side: Employee ID, Nama, Perusahaan, Lokasi, Departemen, Jabatan, Level, Generasi, Umur, Masa Kerja, Employment Type. Sort, search (nama/ID/jabatan), pagination 25/50/100.
-- Filter global berlaku. Klik baris membuka **Detail Karyawan** (7.8.4).
+- Filter global berlaku. Klik baris membuka **Detail Karyawan** (7.9.4).
 - Tombol **Export Excel** (hasil filter). Setiap export dicatat di audit log. Kolom sensitif (Religion, Marital Status, PTKP, Birth Place) hanya ikut jika role berhak.
 - Export besar diproses sinkron (data kecil). Batas 5.000 baris.
 
-### 7.8 Peta Perusahaan (`/peta`) — halaman unggulan
+### 7.8 Data Training Mentah (`/pelatihan/data`)
+- Tabel server-side: NIK, Nama Peserta, Nama PT, Departemen, Lokasi Kerja, Group, Region, Golongan, Jabatan, Bulan, Tahun, Hari, Jam, Nama Pelatihan, Instruktur, Tempat, Tipe Reguler, Tipe Eksternal, Level. Sortable, search (nama/NIK/pelatihan/PT), pagination 25/50/100.
+- Filter khusus yang ditambahkan ke bilah filter standar (diaktifkan saat di halaman ini): Tahun, Bulan, Golongan, Tipe Reguler, Tipe Eksternal, Level, Status NIK.
+- Filter Status NIK sangat penting untuk mengurai kualitas data: `Semua`, `Terhubung (Employee ID ✓)`, `Tidak Terhubung`, `Kosong`, `Rusak (Corrupt)`, `Tidak Valid (Not Found)`.
+- Jika baris memiliki `employee_id` terhubung, klik baris membuka **Detail Karyawan** (seperti pada direktori karyawan).
+- Tombol **Export Excel** (hasil filter). Export menggunakan `WithCustomValueBinder` untuk memaksa NIK menjadi format teks (menghindari notasi ilmiah di Excel).
+
+### 7.9 Peta Perusahaan (`/peta`) — halaman unggulan
 
 Desain visual mengikuti prototipe (Bagian 9.3), dengan perubahan model data: **marker = lokasi kerja**, bukan satu titik per perusahaan.
 
-#### 7.8.1 Layout
+#### 7.9.1 Layout
 Dua kolom dalam satu tampilan penuh:
 - **Kiri:** kartu peta (Leaflet). Header kartu: breadcrumb `Indonesia / {Region atau Perusahaan}` dan legenda warna region.
-- **Kanan (lebar 420 px, tetap):** panel dinamis dengan tiga keadaan (7.8.3–7.8.5).
+- **Kanan (lebar 420 px, tetap):** panel dinamis dengan tiga keadaan (7.9.3–7.9.5).
 - Di layar < 1024 px panel pindah ke bawah peta sebagai bottom sheet.
 
-#### 7.8.2 Peta
+#### 7.9.2 Peta
 - Tile: konfigurasi lewat `.env` (`VITE_MAP_TILE_URL`, `VITE_MAP_ATTRIBUTION`). **Default OpenStreetMap standar dengan atribusi**. Dilarang memakai `mt1.google.com`.
 - Pusat awal dan zoom awal mencakup Sumatera dan Kalimantan; setelah data dimuat, `fitBounds` ke semua marker berkoordinat.
 - Satu marker per `locations` yang punya koordinat. Warna marker menurut Region; ukuran/label menampilkan HC. Gunakan `leaflet.markercluster` bila marker berdekatan.
 - Hover → tooltip: nama lokasi, HC, jumlah perusahaan di lokasi tsb.
-- Klik marker → panel kanan menampilkan **lokasi tersebut** (7.8.4, mode lokasi) atau, bila hanya ada satu perusahaan di lokasi itu, langsung profil perusahaan.
+- Klik marker → panel kanan menampilkan **lokasi tersebut** (7.9.4, mode lokasi) atau, bila hanya ada satu perusahaan di lokasi itu, langsung profil perusahaan.
 - Saat perusahaan dipilih, peta `flyToBounds` ke semua lokasi milik perusahaan tsb (animasi 1,5 dtk); saat kembali ke daftar, kembali ke tampilan awal.
 - Lokasi **tanpa koordinat** tidak muncul di peta. Tampilkan lencana "N lokasi belum punya koordinat" (link ke admin Koordinat Lokasi untuk role admin) dan tetap sertakan mereka di daftar panel.
 - Kantor pusat (`Corp`, `Corporate Office`) ditandai ikon berbeda.
 
-#### 7.8.3 Panel kanan — Keadaan 1: daftar (belum ada pilihan)
+#### 7.9.3 Panel kanan — Keadaan 1: daftar (belum ada pilihan)
 - Kotak cari: "Cari perusahaan, lokasi, atau region…" (filter lokal instan).
 - Daftar dikelompokkan per Region; tiap item: kode + nama perusahaan, HC, jumlah lokasi. Diurutkan HC menurun. Klik item → Keadaan 2.
 - Ringkasan kecil di atas daftar: total HC, jumlah perusahaan, jumlah lokasi (mengikuti scope role).
 
-#### 7.8.4 Panel kanan — Keadaan 2: perusahaan terpilih
+#### 7.9.4 Panel kanan — Keadaan 2: perusahaan terpilih
 Header berwarna teal dengan tombol "‹ Kembali ke daftar", nama perusahaan, region, group, dan jumlah lokasi. Dua tab:
 
 **Tab Profil**
@@ -412,7 +419,7 @@ Header berwarna teal dengan tombol "‹ Kembali ke daftar", nama perusahaan, reg
 - Daftar/tabel staf, pagination server-side (20 per halaman), dengan avatar inisial (bukan foto), nama, jabatan, level, umur, masa kerja.
 - Klik staf → **Detail Karyawan** (modal).
 
-#### 7.8.5 Detail Karyawan (modal, ditampilkan dengan portal di atas semua elemen)
+#### 7.9.5 Detail Karyawan (modal, ditampilkan dengan portal di atas semua elemen)
 Hanya untuk `super_admin`, `hr_admin`, dan `hr_company` (perusahaan sendiri). Setiap pembukaan dicatat ke audit log.
 
 Bagian modal:

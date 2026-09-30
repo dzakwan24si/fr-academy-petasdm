@@ -29,8 +29,11 @@ class ImportTest extends TestCase
         $empImporter = new EmployeeImporter();
         $trainImporter = new TrainingImporter();
 
-        $empBatch1 = $empImporter->import($empFile);
-        $trainBatch1 = $trainImporter->import($trainFile);
+        $empFileUploaded = new \Illuminate\Http\UploadedFile($empFile, 'emp.csv', 'text/csv', null, true);
+        $trainFileUploaded = new \Illuminate\Http\UploadedFile($trainFile, 'train.csv', 'text/csv', null, true);
+
+        $empBatch1 = $empImporter->import($empFileUploaded);
+        $trainBatch1 = $trainImporter->import($trainFileUploaded);
 
         $this->assertEquals(1, DB::table('employees')->count());
         $this->assertEquals(1, DB::table('training_records')->count());
@@ -38,8 +41,8 @@ class ImportTest extends TestCase
         $this->assertEquals(1, $trainBatch1->rows_imported);
 
         // Run again, should be idempotent
-        $empBatch2 = $empImporter->import($empFile);
-        $trainBatch2 = $trainImporter->import($trainFile);
+        $empBatch2 = $empImporter->import($empFileUploaded);
+        $trainBatch2 = $trainImporter->import($trainFileUploaded);
 
         $this->assertEquals(1, DB::table('employees')->count());
         $this->assertEquals(1, DB::table('training_records')->count());
@@ -61,7 +64,7 @@ class ImportTest extends TestCase
         $this->expectExceptionMessageMatches('/Kolom hilang: Employee ID/');
         
         try {
-            $importer->import($file);
+            $importer->import(new \Illuminate\Http\UploadedFile($file, 'test.csv', 'text/csv', null, true));
         } finally {
             unlink($file);
         }
@@ -78,7 +81,7 @@ class ImportTest extends TestCase
         $importer = new EmployeeImporter();
         
         DB::enableQueryLog();
-        $importer->import($file);
+        $importer->import(new \Illuminate\Http\UploadedFile($file, 'test.csv', 'text/csv', null, true));
         $queries = DB::getQueryLog();
         DB::disableQueryLog();
 
@@ -103,7 +106,7 @@ class ImportTest extends TestCase
         file_put_contents($file, $empCsv);
 
         $importer = new EmployeeImporter();
-        $batch = $importer->import($file);
+        $batch = $importer->import(new \Illuminate\Http\UploadedFile($file, 'test.csv', 'text/csv', null, true));
         
         $warnings = is_string($batch->warnings) ? json_decode($batch->warnings, true) : $batch->warnings;
         $hasMissingWarning = false;

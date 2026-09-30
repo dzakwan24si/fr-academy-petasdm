@@ -22,6 +22,11 @@ export function useFilters(isTrainingPage = false) {
         gender: searchParams.getAll('gender[]'),
         year: searchParams.get('year') || '',
         month: searchParams.get('month') || '',
+        nik_status: searchParams.get('nik_status') || '',
+        job_category: searchParams.getAll('job_category[]'),
+        is_regular: searchParams.get('is_regular') || '',
+        is_internal: searchParams.get('is_internal') || '',
+        level: searchParams.getAll('level[]'),
     });
 
     const [options, setOptions] = useState(cachedOptions || null);
@@ -52,7 +57,7 @@ export function useFilters(isTrainingPage = false) {
         for (const key in currentFilters) {
             if (Array.isArray(currentFilters[key]) && currentFilters[key].length > 0) {
                 query[`${key}[]`] = currentFilters[key];
-            } else if (!Array.isArray(currentFilters[key]) && currentFilters[key]) {
+            } else if (!Array.isArray(currentFilters[key]) && currentFilters[key] !== '') {
                 query[key] = currentFilters[key];
             }
         }
@@ -64,7 +69,8 @@ export function useFilters(isTrainingPage = false) {
         const emptyFilters = {
             region: [], group: [], company_id: [], location_id: [],
             organization_name: [], job_level_code: [], employment_type: [],
-            generation: [], gender: [], year: '', month: ''
+            generation: [], gender: [], year: '', month: '',
+            nik_status: '', job_category: [], is_regular: '', is_internal: '', level: []
         };
         setFilters(emptyFilters);
         applyFilters(emptyFilters);

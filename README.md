@@ -1,58 +1,80 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Peta SDM Operasional
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi manajemen dan visualisasi data geospasial Sumber Daya Manusia (SDM) perusahaan.
 
-## About Laravel
+## Fitur Utama
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Peta Interaktif SDM**: Visualisasi persebaran karyawan berdasarkan lokasi kantor dengan klaster dinamis (didukung oleh Leaflet).
+- **Dashboard & Analisis Demografi**: Analisis usia, generasi, masa kerja, dan status pensiun karyawan.
+- **Pelatihan**: Analisis catatan pelatihan (*training records*) dan efektivitas kompetensi.
+- **Analisis Gabungan**: Melakukan perbandingan korelasi tingkat kinerja dengan *coverage* pelatihan.
+- **Direktori Karyawan**: Tabel pencarian karyawan skala besar secara *server-side* dengan kapabilitas Ekspor ke Excel tanpa mengubah data tipe string menjadi ilmiah.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Persyaratan Sistem
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP >= 8.3
+- Composer >= 2.0
+- Node.js >= 20.x
+- Database: SQLite (default) / MySQL / PostgreSQL
+- Web Server: Laragon / Nginx / Apache / `php artisan serve`
 
-## Learning Laravel
+## Instalasi (Dari Nol)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+1. **Clone repository & masuk ke direktori proyek**:
+   ```bash
+   git clone <repo-url> peta-sdm
+   cd peta-sdm
+   ```
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+2. **Instal dependensi Backend (PHP) & Frontend (Node)**:
+   ```bash
+   composer install
+   npm install
+   ```
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+3. **Setup Environment**:
+   Salin file konfigurasi `.env`:
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-## Agentic Development
+4. **Migrasi Database**:
+   Aplikasi menggunakan database SQLite secara default (`database/database.sqlite`).
+   ```bash
+   php artisan migrate:fresh
+   ```
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+5. **Pembuatan Akun Admin**:
+   Aplikasi ini menggunakan sistem **Single Account** tanpa role tambahan. Jalankan command ini untuk membuat akun admin dengan cepat:
+   ```bash
+   php artisan sdm:create-user admin@peta-sdm.com password
+   ```
 
+6. **Import Data Master SDM**:
+   Masuk ke aplikasi melalui browser (`http://localhost:8000/login`) lalu akses modul **/admin/import** untuk mengunggah file CSV SDM resmi:
+   - `employees-data.csv`
+   - `locations-filled.csv`
+   - `training_records.csv`
+   - `performance_reviews.csv`
+
+7. **Build & Run Aplikasi**:
+   ```bash
+   npm run build
+   php artisan serve
+   ```
+
+## Catatan Penting Keamanan (Security Notes)
+
+- **Akses Data Bersifat Rahasia**: Data karyawan mengandung 1.746 baris data pribadi termasuk (namun tak terbatas pada) Tanggal Lahir, Status Pernikahan, Agama, dan Kode PTKP. Seluruh rute aplikasi (kecuali `/login`) dilindungi dengan *middleware* `auth`.
+- **Tidak Ada File Publik**: Jangan pernah membuat file viewer, debug scratch, atau menyimpan file hasil *export* di folder `public/` atau menggunakan symlink publik (`php artisan storage:link`) jika tujuannya menampung data sensitif. Semua *export* harus disalurkan langsung via browser (Response Stream Download) tanpa disimpan secara permanen di root aplikasi.
+- **Single Admin Architecture**: Karena keputusan pengembangan, aplikasi didesain khusus bagi pengelola utama SDM sehingga tidak ada halaman manajemen multi-user (`/admin/users`) atau registrasi terbuka untuk mencegah eskalasi *privilege*.
+
+## Testing
+
+Untuk menjalankan *unit testing* dan *feature testing*, jalankan perintah:
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+php artisan test
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Aplikasi ini menggunakan SQLite in-memory untuk testing secara terisolasi.

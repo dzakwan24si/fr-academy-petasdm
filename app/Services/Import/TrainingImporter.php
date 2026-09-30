@@ -8,18 +8,22 @@ use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Throwable;
 
+use Illuminate\Http\UploadedFile;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\GenericImport;
+
 class TrainingImporter
 {
     private array $companyByKey = [];
     private array $aliasMap = [];
     private array $employeeIds = [];
 
-    public function import(string $path, ?int $userId = null): ImportBatch
+    public function import(UploadedFile $file, ?int $userId = null): ImportBatch
     {
         $batch = ImportBatch::create([
             'user_id' => $userId,
             'type' => 'training',
-            'filename' => basename($path),
+            'filename' => $file->getClientOriginalName(),
             'status' => 'running',
             'started_at' => now(),
         ]);
@@ -27,7 +31,7 @@ class TrainingImporter
         $report = new ImportReport();
 
         try {
-            DB::transaction(function () use ($path, $report) {
+            DB::transaction(function () use ($file, $report) {
                 // Delete existing records
                 DB::table('training_records')->delete();
                 
@@ -35,7 +39,7 @@ class TrainingImporter
                 $this->aliasMap = DB::table('company_aliases')->pluck('company_id', 'alias')->all();
                 $this->employeeIds = DB::table('employees')->pluck('id', 'employee_id')->all();
                 
-                $this->processFile($path, $report);
+                $this->processFile($file, $report);
             });
 
             $batch->update([
@@ -58,18 +62,15 @@ class TrainingImporter
         return $batch;
     }
 
-    private function processFile(string $path, ImportReport $report): void
+    private function processFile(UploadedFile $file, ImportReport $report): void
     {
-        $fh = fopen($path, 'r');
-        if (!$fh) {
-            throw new RuntimeException("Tidak bisa membuka $path");
+        $data = Excel::toArray(new GenericImport, $file);
+        if (empty($data) || empty($data[0])) {
+            throw new RuntimeException("File kosong atau tidak dapat dibaca");
         }
-
-        if (fread($fh, 3) !== "\xEF\xBB\xBF") {
-            rewind($fh);
-        }
-
-        $header = array_map('trim', fgetcsv($fh, 0, ';') ?: []);
+        
+        $rows = $data[0];
+        $header = array_map('trim', array_filter((array) $rows[0], fn($v) => $v !== null));
         $expectedHeader = ['NIK', 'Nama', 'Jenis Kelamin', 'Nama PT', 'Department', 'lokasi Kerja', 'Group', 'REGION', 'GOL', 'Jabatan', 'Tgl', 'Bln', 'Thn', 'Jml Hari', 'Jam Pelatihan', 'Nama Pelatihan', 'Instruktur', 'Tempat Pelatihan', 'Reg / Non Reg', 'Keterangan', 'Internal/Eksternal', 'Level', 'Periode'];
         
         $missing = array_diff($expectedHeader, $header);
@@ -80,17 +81,15 @@ class TrainingImporter
         $count = count($header);
         $insertBatch = [];
 
-        while (($r = fgetcsv($fh, 0, ';')) !== false) {
-            if ($r === [null]) {
+        for ($i = 1; $i < count($rows); $i++) {
+            $r = $rows[$i];
+            
+            if (empty(array_filter($r, fn($val) => $val !== null && $val !== ''))) {
                 continue;
             }
+            
             $r = array_pad($r, $count, null);
             $row = array_combine($header, array_slice($r, 0, $count));
-            foreach ($row as $k => $v) {
-                if (is_string($v) && !mb_check_encoding($v, 'UTF-8')) {
-                    $row[$k] = mb_convert_encoding($v, 'UTF-8', 'ISO-8859-1');
-                }
-            }
             
             $report->totalRows++;
             
@@ -174,7 +173,5 @@ class TrainingImporter
         if ($insertBatch) {
             DB::table('training_records')->insert($insertBatch);
         }
-
-        fclose($fh);
     }
 }

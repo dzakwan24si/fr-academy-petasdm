@@ -108,72 +108,41 @@ class TrainingMetrics
         ksort($trend);
         ksort($participantsCountTrend);
 
-        // Fetch employee details to calculate demographics hours
-        // We only need employee details for records that have employee_id
-        $empIds = array_keys($uniqueParticipants);
-        $employees = [];
-        if (!empty($empIds)) {
-            $empData = DB::table('employees')->whereIn('employee_id', $empIds)->get([
-                'employee_id', 'region', 'group', 'organization_name', 'gender', 'job_level_code'
-            ]);
-            foreach ($empData as $e) {
-                $employees[$e->employee_id] = $e;
-            }
-        }
-
-        // Second pass for employee specific aggregations
+        $participantDemographics = [];
+        
         foreach ($trainings as $t) {
-            if ($t->employee_id && isset($employees[$t->employee_id])) {
-                $e = $employees[$t->employee_id];
-                
-                $reg = $e->region ?? 'Unknown';
-                $hoursByRegion[$reg] = ($hoursByRegion[$reg] ?? 0) + $t->hours;
-                
-                $grp = $e->group ?? 'Unknown';
-                $hoursByGroup[$grp] = ($hoursByGroup[$grp] ?? 0) + $t->hours;
-                
-                $dept = $e->organization_name ?? 'Unknown';
-                $hoursByDept[$dept] = ($hoursByDept[$dept] ?? 0) + $t->hours;
-                
-                // GOL Staf/Non Staf: Let's assume A,B,C,D is Staf? PRD didn't define Golongan mapping strictly for Training. Wait, job_level_code 1,2,3,4,5 vs A,B,C,D,E,F. 
-                // Let's use simple logic: if level is A-F -> Non Staf (Workers?), 1-3 Staf, 4-5 Manager. 
-                // Wait, typically Non Staf = A-F, Staf = 1-2, Middle = 3, Senior = 4-5.
-                $isStaf = preg_match('/^[1-5]$/', $e->job_level_code) ? 'Staf' : 'Non Staf';
-                $hoursByGol[$isStaf] = ($hoursByGol[$isStaf] ?? 0) + $t->hours;
-                
-                $lvlCategory = match(true) {
-                    in_array($e->job_level_code, ['A','B','C','D','E','F']) => 'Workers',
-                    in_array($e->job_level_code, ['1','2']) => 'Staf',
-                    in_array($e->job_level_code, ['3']) => 'Middle',
-                    in_array($e->job_level_code, ['4','5']) => 'Senior',
-                    default => 'Unknown'
-                };
-                $hoursByLevel[$lvlCategory] = ($hoursByLevel[$lvlCategory] ?? 0) + $t->hours;
-                
-                if (!isset($genderByLevel[$lvlCategory])) {
-                    $genderByLevel[$lvlCategory] = ['Male' => 0, 'Female' => 0];
-                }
-                $genderByLevel[$lvlCategory][$e->gender ?? 'Male'] += 1; // Wait, stacked bar gender x Level is Participant Count or Hours? "Stacked bar gender × Level" -> probably participant count. Let's use participant count.
+            $reg = $t->region ?? 'Unknown';
+            $hoursByRegion[$reg] = ($hoursByRegion[$reg] ?? 0) + $t->hours;
+            
+            $grp = $t->group ?? 'Unknown';
+            $hoursByGroup[$grp] = ($hoursByGroup[$grp] ?? 0) + $t->hours;
+            
+            $dept = $t->department ?? 'Unknown';
+            $hoursByDept[$dept] = ($hoursByDept[$dept] ?? 0) + $t->hours;
+            
+            $gol = $t->grade ?? 'Unknown';
+            $hoursByGol[$gol] = ($hoursByGol[$gol] ?? 0) + $t->hours;
+            
+            $lvlCategory = $t->level ?? 'Unknown';
+            $hoursByLevel[$lvlCategory] = ($hoursByLevel[$lvlCategory] ?? 0) + $t->hours;
+            
+            $uniqueKey = $t->employee_id ?: ($t->nik_raw ?: $t->participant_name);
+            if ($uniqueKey && !isset($participantDemographics[$uniqueKey])) {
+                $participantDemographics[$uniqueKey] = [
+                    'gender' => $t->gender ?? 'Male',
+                    'level' => $lvlCategory
+                ];
             }
         }
         
-        // Let's fix genderByLevel to be based on unique participants, not training records
         $genderByLevel = [];
-        foreach ($empIds as $eid) {
-            if (isset($employees[$eid])) {
-                $e = $employees[$eid];
-                $lvlCategory = match(true) {
-                    in_array($e->job_level_code, ['A','B','C','D','E','F']) => 'Workers',
-                    in_array($e->job_level_code, ['1','2']) => 'Staf',
-                    in_array($e->job_level_code, ['3']) => 'Middle',
-                    in_array($e->job_level_code, ['4','5']) => 'Senior',
-                    default => 'Unknown'
-                };
-                if (!isset($genderByLevel[$lvlCategory])) {
-                    $genderByLevel[$lvlCategory] = ['Male' => 0, 'Female' => 0];
-                }
-                $genderByLevel[$lvlCategory][$e->gender ?? 'Male'] += 1;
+        foreach ($participantDemographics as $demo) {
+            $lvl = $demo['level'];
+            if (!isset($genderByLevel[$lvl])) {
+                $genderByLevel[$lvl] = ['Male' => 0, 'Female' => 0];
             }
+            $g = $demo['gender'] === 'Female' ? 'Female' : 'Male';
+            $genderByLevel[$lvl][$g] += 1;
         }
 
         return [

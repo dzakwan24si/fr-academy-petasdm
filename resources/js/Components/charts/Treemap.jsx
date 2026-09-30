@@ -36,6 +36,19 @@ const CustomizedContent = (props) => {
     );
 };
 
+const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+        const data = payload[0].payload;
+        return (
+            <div className="bg-white p-3 rounded-lg shadow-md border border-gray-100 text-sm">
+                <p className="font-bold text-gray-800 mb-1">{data.name}</p>
+                <p className="text-gray-600">Total HC: <span className="font-semibold text-gray-900">{formatNumber(data.value)}</span></p>
+            </div>
+        );
+    }
+    return null;
+};
+
 export function Treemap({ data, nameKey = 'name', dataKey = 'value' }) {
     if (!data || data.length === 0) return null;
 
@@ -49,10 +62,7 @@ export function Treemap({ data, nameKey = 'name', dataKey = 'value' }) {
                 fill="#8884d8"
                 content={<CustomizedContent />}
             >
-                <Tooltip 
-                    formatter={(value) => [formatNumber(value), 'Jumlah']}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                />
+                <Tooltip content={<CustomTooltip />} cursor={false} />
             </RechartsTreemap>
         </ResponsiveContainer>
     );

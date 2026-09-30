@@ -164,6 +164,9 @@ class WorkforceMetrics
             
             if ($e->birth_place) {
                 $bp = strtoupper(trim($e->birth_place));
+                if ($bp === '(NONE)' || $bp === 'NONE' || $bp === '') {
+                    $bp = 'TIDAK DIKETAHUI';
+                }
                 $birthPlaces[$bp] = ($birthPlaces[$bp] ?? 0) + 1;
             }
         }

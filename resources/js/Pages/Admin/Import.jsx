@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useForm, usePage } from '@inertiajs/react';
+import { useForm, usePage, Head } from '@inertiajs/react';
+import AppLayout from '@/Layouts/AppLayout';
 
 export default function Import() {
     const { batches } = usePage().props;
@@ -10,13 +11,13 @@ export default function Import() {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('admin.import.store'), {
+        post('/admin/import', {
             onSuccess: () => reset('file'),
         });
     };
 
     return (
-        <div className="p-8">
+        <AppLayout title="Import Data">
             <h1 className="text-2xl font-bold mb-6">Import Data SDM</h1>
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8 max-w-2xl">
                 <form onSubmit={submit} className="space-y-4">
@@ -32,10 +33,28 @@ export default function Import() {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">File CSV</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">File Upload (.csv, .xlsx)</label>
+                        
+                        {/* Peringatan Keamanan dan Integritas Data */}
+                        <div className="mb-3 p-3 bg-yellow-50 border-l-4 border-yellow-400 text-sm text-yellow-800">
+                            <strong>PERHATIAN PENTING:</strong>
+                            {data.type === 'employee' ? (
+                                <p className="mt-1">
+                                    File Karyawan yang diupload <strong>MENGGANTIKAN</strong> data lama per Employee ID (upsert). 
+                                    Karyawan yang hilang dari file baru <strong>TIDAK otomatis dihapus</strong> dari sistem. 
+                                    Anda harus menghapusnya secara manual di sistem jika karyawan tersebut resign.
+                                </p>
+                            ) : (
+                                <p className="mt-1">
+                                    File Training yang diupload harus berupa <strong>REKAP LENGKAP</strong> dari awal (bukan cuma data bulan berjalan). 
+                                    Setiap import training akan <strong>MENGGANTI SELURUH data lama</strong> di sistem, bukan menambahkannya.
+                                </p>
+                            )}
+                        </div>
+
                         <input 
                             type="file" 
-                            accept=".csv,.txt"
+                            accept=".csv,.txt,.xlsx,.xls"
                             onChange={e => setData('file', e.target.files[0])}
                             className="w-full border border-gray-300 p-2 rounded-md"
                         />
@@ -78,6 +97,6 @@ export default function Import() {
                     </tbody>
                 </table>
             </div>
-        </div>
+        </AppLayout>
     );
 }

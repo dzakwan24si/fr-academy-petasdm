@@ -57,7 +57,7 @@ export default function Dashboard({ metrics, insight }) {
     }).filter(row => row.total > 0).sort((a, b) => b.pct - a.pct) : [];
 
     return (
-        <AppLayout>
+        <AppLayout title="Dashboard">
             <Head title="Dashboard" />
             
             <FilterBar />
@@ -121,18 +121,20 @@ export default function Dashboard({ metrics, insight }) {
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
                                                 {retireRiskData.map(row => {
-                                                    let colorClass = "text-gray-600";
-                                                    if (row.pct > 15) colorClass = "text-red-600 font-bold bg-red-50";
-                                                    else if (row.pct >= 5) colorClass = "text-amber-600 font-bold bg-amber-50";
-                                                    else if (row.pct > 0) colorClass = "text-green-600 font-bold bg-green-50";
+                                                    let badgeClass = "bg-gray-200 text-gray-800";
+                                                    if (row.pct > 15) badgeClass = "bg-red-600 text-white";
+                                                    else if (row.pct >= 5) badgeClass = "bg-amber-500 text-white";
+                                                    else if (row.pct > 0) badgeClass = "bg-green-600 text-white";
 
                                                     return (
                                                         <tr key={row.name} className="hover:bg-gray-50 transition-colors">
                                                             <td className="px-4 py-3 text-gray-800 font-medium">{row.name}</td>
                                                             <td className="px-4 py-3 text-right text-gray-600">{formatNumber(row.total)}</td>
                                                             <td className="px-4 py-3 text-right text-gray-600">{formatNumber(row.value)}</td>
-                                                            <td className={`px-4 py-3 text-right rounded ${colorClass}`}>
-                                                                {row.pct.toFixed(1)}%
+                                                            <td className="px-4 py-3 text-right">
+                                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badgeClass}`}>
+                                                                    {row.pct.toFixed(1)}%
+                                                                </span>
                                                             </td>
                                                         </tr>
                                                     );

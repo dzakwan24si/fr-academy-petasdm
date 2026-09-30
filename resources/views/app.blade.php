@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title inertia>{{ config('app.name', 'Peta SDM Operasional') }}</title>
+        <link rel="icon" type="image/svg+xml" href="/faviconfr.svg">
 
         <!-- Scripts -->
         @viteReactRefresh

@@ -10,4 +10,14 @@ class Employee extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
+    }
 }

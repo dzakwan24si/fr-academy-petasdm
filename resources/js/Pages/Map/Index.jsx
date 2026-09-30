@@ -4,6 +4,7 @@ import axios from 'axios';
 import { SdmMap } from '@/Components/Map/SdmMap';
 import { CompanyPanel } from '@/Components/Map/CompanyPanel';
 import { CompanyList } from '@/Components/Map/CompanyList';
+import AppLayout from '@/Layouts/AppLayout';
 
 export default function MapIndex() {
     const [locations, setLocations] = useState([]);
@@ -31,48 +32,50 @@ export default function MapIndex() {
     const noCoordCount = locations.filter(l => !l.latitude || !l.longitude).length;
 
     return (
-        <div className="flex flex-col lg:flex-row h-screen bg-app-bg overflow-hidden relative">
+        <AppLayout fullHeight={true} title="Peta Perusahaan">
             <Head title="Peta Perusahaan" />
-            
-            <div className="flex-1 relative z-0">
-                <SdmMap 
-                    locations={locations} 
-                    selectedCompanyId={selectedCompanyId}
-                    selectedLocationId={selectedLocationId}
-                    onSelectLocation={(locId, singleCompanyId) => {
-                        setSelectedLocationId(locId);
-                        if (singleCompanyId) setSelectedCompanyId(singleCompanyId);
-                    }}
-                />
+            <div className="flex flex-col lg:flex-row h-full w-full bg-app-bg overflow-hidden relative">
                 
-                {noCoordCount > 0 && (
-                    <div className="absolute top-4 right-4 bg-orange-100 border border-orange-300 text-orange-800 px-3 py-2 rounded-lg shadow-sm z-[1000]">
-                        <p className="text-sm font-medium">{noCoordCount} lokasi belum punya koordinat</p>
-                    </div>
-                )}
-            </div>
+                <div className="flex-1 relative z-0 h-full">
+                    <SdmMap 
+                        locations={locations} 
+                        selectedCompanyId={selectedCompanyId}
+                        selectedLocationId={selectedLocationId}
+                        onSelectLocation={(locId, singleCompanyId) => {
+                            setSelectedLocationId(locId);
+                            if (singleCompanyId) setSelectedCompanyId(singleCompanyId);
+                        }}
+                    />
+                    
+                    {noCoordCount > 0 && (
+                        <div className="absolute top-4 right-4 bg-orange-100 border border-orange-300 text-orange-800 px-3 py-2 rounded-lg shadow-sm z-[1000]">
+                            <p className="text-sm font-medium">{noCoordCount} lokasi belum punya koordinat</p>
+                        </div>
+                    )}
+                </div>
 
-            <div className="w-full lg:w-[420px] bg-panel-bg shadow-[-4px_0_15px_rgba(0,0,0,0.05)] z-10 flex flex-col transition-transform duration-300">
-                {selectedCompany ? (
-                    <CompanyPanel 
-                        company={selectedCompany} 
-                        location={selectedLocation}
-                        onBack={() => {
-                            setSelectedCompanyId(null);
-                            setSelectedLocationId(null);
-                        }} 
-                        onLocationSelect={setSelectedLocationId}
-                    />
-                ) : (
-                    <CompanyList 
-                        companies={companies} 
-                        locations={locations}
-                        totalLocations={totalLocations}
-                        selectedLocation={selectedLocation}
-                        onSelectCompany={setSelectedCompanyId}
-                    />
-                )}
+                <div className="w-full lg:w-[420px] bg-panel-bg shadow-[-4px_0_15px_rgba(0,0,0,0.05)] z-10 flex flex-col h-full transition-transform duration-300">
+                    {selectedCompany ? (
+                        <CompanyPanel 
+                            company={selectedCompany} 
+                            location={selectedLocation}
+                            onBack={() => {
+                                setSelectedCompanyId(null);
+                                setSelectedLocationId(null);
+                            }} 
+                            onLocationSelect={setSelectedLocationId}
+                        />
+                    ) : (
+                        <CompanyList 
+                            companies={companies} 
+                            locations={locations}
+                            totalLocations={totalLocations}
+                            selectedLocation={selectedLocation}
+                            onSelectCompany={setSelectedCompanyId}
+                        />
+                    )}
+                </div>
             </div>
-        </div>
+        </AppLayout>
     );
 }

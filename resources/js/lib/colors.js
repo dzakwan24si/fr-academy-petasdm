@@ -1,17 +1,17 @@
 export const generationColors = {
     'Boomers': '#94A3B8', // slate-400
     'Gen X': '#F59E0B',   // amber-500
-    'Gen Y': '#0EA5E9',   // sky-500
-    'Gen Z': '#10B981'    // emerald-500
+    'Gen Y': '#2E7D32',   // corporate-light
+    'Gen Z': '#004D40'    // corporate-dark
 };
 
 export const defaultPalette = [
     '#2E7D32', // corporate-light
+    '#F59E0B', // amber
     '#004D40', // corporate-dark
-    '#0EA5E9', 
-    '#F59E0B',
-    '#8B5CF6',
-    '#EC4899',
-    '#14B8A6',
-    '#F97316'
+    '#94A3B8', // slate-400
+    '#64748B', // slate-500
+    '#FBBF24', // amber-400
+    '#4ADE80', // green-400
+    '#CBD5E1'  // slate-300
 ];

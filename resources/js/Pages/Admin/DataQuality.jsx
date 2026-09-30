@@ -1,10 +1,11 @@
-import { usePage } from '@inertiajs/react';
+import { usePage, Head } from '@inertiajs/react';
+import AppLayout from '@/Layouts/AppLayout';
 
 export default function DataQuality() {
     const { stats } = usePage().props;
 
     return (
-        <div className="p-8">
+        <AppLayout title="Kualitas Data">
             <h1 className="text-2xl font-bold mb-6">Laporan Kualitas Data</h1>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -59,6 +60,6 @@ export default function DataQuality() {
                     </div>
                 </div>
             </div>
-        </div>
+        </AppLayout>
     );
 }

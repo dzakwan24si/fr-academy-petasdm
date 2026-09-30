@@ -23,17 +23,17 @@ class ImportController extends Controller
     {
         $request->validate([
             'type' => 'required|in:employee,training',
-            'file' => 'required|file|mimes:csv,txt'
+            'file' => 'required|file|mimes:csv,txt,xlsx,xls'
         ]);
 
-        $path = $request->file('file')->getRealPath();
+        $file = $request->file('file');
         $type = $request->input('type');
 
         try {
             if ($type === 'employee') {
-                $empImporter->import($path, $request->user()->id);
+                $empImporter->import($file, $request->user()->id);
             } else {
-                $trainImporter->import($path, $request->user()->id);
+                $trainImporter->import($file, $request->user()->id);
             }
         } catch (\Exception $e) {
             return back()->withErrors(['file' => 'Import gagal: ' . $e->getMessage()]);

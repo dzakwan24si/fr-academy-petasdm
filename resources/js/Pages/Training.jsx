@@ -63,7 +63,7 @@ export default function Training({ metrics, filters }) {
     })) : [];
 
     return (
-        <AppLayout>
+        <AppLayout title="Pelatihan">
             <Head title="Pelatihan" />
             <FilterBar />
 
@@ -93,10 +93,7 @@ export default function Training({ metrics, filters }) {
 
                         {/* Trend */}
                         <ChartCard title="Tren Jam & Peserta Pelatihan" className="h-96">
-                            <LineTrend data={trendData} xAxisKey="name" lines={[
-                                { key: 'hours', name: 'Total Jam', color: defaultPalette[0] },
-                                { key: 'participants', name: 'Peserta', color: defaultPalette[1] }
-                            ]} />
+                            <LineTrend data={trendData} xAxisKey="name" keys={['hours', 'participants']} colors={{ hours: defaultPalette[0], participants: defaultPalette[1] }} />
                         </ChartCard>
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -132,7 +129,7 @@ export default function Training({ metrics, filters }) {
                             <ChartCard title="Total Jam per Group">
                                 <HorizontalBar data={hoursGroup} color={defaultPalette[4]} />
                             </ChartCard>
-                            <ChartCard title="Total Jam per Departemen (Top 15)">
+                            <ChartCard title="Total Jam per Departemen (Top 15)" className="h-full" height="flex-1 min-h-[500px]">
                                 <HorizontalBar data={hoursDept} color={defaultPalette[5]} />
                             </ChartCard>
                             <div className="grid grid-rows-2 gap-6">

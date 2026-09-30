@@ -3,7 +3,7 @@ import { EmptyState } from './EmptyState';
 
 export function ChartCard({ title, loading, isEmpty, children, className = '', height = "h-72" }) {
     return (
-        <div className={`bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col ${className}`}>
+        <div className={`bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col ${className}`}>
             <h3 className="font-bold text-gray-800 mb-4">{title}</h3>
             <div className={`relative w-full min-h-[18rem] ${height}`}>
                 {loading ? (

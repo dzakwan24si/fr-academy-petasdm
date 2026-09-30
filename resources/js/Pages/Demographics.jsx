@@ -117,7 +117,7 @@ export default function Demographics({ metrics }) {
     }) : [];
 
     return (
-        <AppLayout>
+        <AppLayout title="Demografi & Headcount">
             <Head title="Demografi & Headcount" />
             <FilterBar />
 

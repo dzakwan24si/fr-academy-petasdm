@@ -64,12 +64,20 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('demografi');
 
-    Route::get('/masa-kerja', function () {
-        return Inertia::render('Tenure');
+    Route::get('/masa-kerja', function (\Illuminate\Http\Request $request, \App\Support\EmployeeFilter $filter) {
+        $metricsService = new \App\Services\TenureMetrics();
+        return Inertia::render('Tenure', [
+            'metrics' => Inertia::defer(fn () => $metricsService->getMetrics($request, $filter)),
+            'filters' => $request->all()
+        ]);
     })->name('masa-kerja');
 
-    Route::get('/pensiun', function () {
-        return Inertia::render('Retirement');
+    Route::get('/pensiun', function (\Illuminate\Http\Request $request, \App\Support\EmployeeFilter $filter) {
+        $metricsService = new \App\Services\RetirementMetrics();
+        return Inertia::render('Retirement', [
+            'metrics' => Inertia::defer(fn () => $metricsService->getMetrics($request, $filter)),
+            'filters' => $request->all()
+        ]);
     })->name('pensiun');
 
     Route::get('/pelatihan', function (\Illuminate\Http\Request $request, \App\Support\TrainingFilter $filter) {
@@ -80,14 +88,20 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('pelatihan');
 
-    Route::get('/analisis-gabungan', function () {
-        return Inertia::render('Combined');
+    Route::get('/pelatihan/data', [\App\Http\Controllers\TrainingRecordController::class, 'index'])->name('pelatihan.data');
+    Route::get('/pelatihan/data/export', [\App\Http\Controllers\TrainingRecordController::class, 'export'])->name('pelatihan.data.export');
+
+    Route::get('/analisis-gabungan', function (\Illuminate\Http\Request $request, \App\Support\EmployeeFilter $filter) {
+        $metricsService = new \App\Services\CombinedMetrics();
+        return Inertia::render('Combined', [
+            'metrics' => Inertia::defer(fn () => $metricsService->getMetrics($request, $filter)),
+            'filters' => $request->all()
+        ]);
     })->name('analisis-gabungan');
 
     // Karyawan route
-    Route::get('/karyawan', function () {
-        return Inertia::render('Employees/Index');
-    })->name('karyawan');
+    Route::get('/karyawan', [\App\Http\Controllers\EmployeeDirectoryController::class, 'index'])->name('karyawan');
+    Route::get('/karyawan/export', [\App\Http\Controllers\EmployeeDirectoryController::class, 'export'])->name('karyawan.export');
 
     // Admin routes
     Route::get('/admin/import', [\App\Http\Controllers\ImportController::class, 'index'])->name('admin.import');

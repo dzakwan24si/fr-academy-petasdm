@@ -74,12 +74,25 @@ export function SdmMap({ locations, selectedCompanyId, selectedLocationId, onSel
     };
 
     return (
-        <MapContainer center={[-2.5, 118.0]} zoom={5} className="h-full w-full z-0" zoomControl={false}>
+        <MapContainer 
+            center={[-2.5, 118.0]} 
+            zoom={5} 
+            className="h-full w-full z-0" 
+            zoomControl={false}
+            preferCanvas={true}
+            zoomSnap={1}
+            wheelPxPerZoomLevel={60}
+        >
             <TileLayer
                 url={import.meta.env.VITE_MAP_TILE_URL || "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"}
                 attribution={import.meta.env.VITE_MAP_ATTRIBUTION || '&copy; Google Maps'}
             />
-            <MarkerClusterGroup chunkedLoading maxClusterRadius={40}>
+            <MarkerClusterGroup 
+                chunkedLoading={true} 
+                maxClusterRadius={40}
+                spiderfyOnMaxZoom={true}
+                removeOutsideVisibleBounds={true}
+            >
                 {validLocs.map(loc => (
                     <Marker 
                         key={loc.id} 
