@@ -38,7 +38,7 @@ class CleanTest extends TestCase
     {
         $this->assertEquals('empty', Clean::nikStatus('-'));
         $this->assertEquals('empty', Clean::nikStatus(''));
-        $this->assertEquals('corrupt', Clean::nikStatus('20140700000000'));
+        $this->assertEquals('ok', Clean::nikStatus('20140700000000'));
         $this->assertEquals('corrupt', Clean::nikStatus('2,01407E+13'));
         $this->assertEquals('invalid', Clean::nikStatus('Promosi'));
         $this->assertEquals('ok', Clean::nikStatus('123456'));

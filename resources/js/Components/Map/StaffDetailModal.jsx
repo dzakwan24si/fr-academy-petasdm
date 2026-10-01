@@ -94,7 +94,7 @@ export function StaffDetailModal({ employeeId, onClose }) {
                                                 <tr>
                                                     <th className="p-2 border-r">Waktu</th>
                                                     <th className="p-2 border-r">Nama Pelatihan</th>
-                                                    <th className="p-2 border-r">Provider</th>
+                                                    <th className="p-2 border-r">Intruktur</th>
                                                     <th className="p-2 border-r">Reguler?</th>
                                                     <th className="p-2">Jam</th>
                                                 </tr>

@@ -59,6 +59,8 @@ class EmployeeDirectoryTest extends TestCase
             'updated_at' => now(),
         ]);
         
+        \Carbon\Carbon::setTestNow(now());
+        
         Employee::create([
             'employee_id' => 'E200',
             'name' => 'Siti Aminah',
@@ -69,7 +71,7 @@ class EmployeeDirectoryTest extends TestCase
         
         $response = $this->actingAs($user)->get('/karyawan/export');
         $response->assertStatus(200);
-        $response->assertHeader('Content-Disposition', 'attachment; filename=direktori_karyawan_' . date('Ymd_His') . '.xlsx');
+        $response->assertHeader('Content-Disposition', 'attachment; filename=direktori_karyawan_' . now()->format('Ymd_His') . '.xlsx');
         
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => $user->id,

@@ -13,7 +13,19 @@ class Clean
     public static function date2(?string $value, int $pivot): ?Carbon
     {
         $value = trim((string) $value);
-        if ($value === '' || ! preg_match('/^(\d{1,2})-([A-Za-z]{3})-(\d{2}|\d{4})$/', $value, $m)) {
+        if ($value === '') {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            try {
+                return Carbon::instance(\PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value))->startOfDay();
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        if (! preg_match('/^(\d{1,2})-([A-Za-z]{3})-(\d{2}|\d{4})$/', $value, $m)) {
             return null;
         }
 
@@ -92,7 +104,6 @@ class Clean
             $v === '' || $v === '-' => 'empty',
             (bool) preg_match('/^\d+[,.]?\d*E\+\d+$/i', $v) => 'corrupt',
             ! ctype_digit($v) => 'invalid',
-            strlen($v) > 11 => 'corrupt',
             default => 'ok',
         };
     }

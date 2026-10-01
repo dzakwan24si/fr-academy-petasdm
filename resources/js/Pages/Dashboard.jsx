@@ -7,9 +7,11 @@ import { DonutChart } from '@/Components/charts/DonutChart';
 import { StackedBar } from '@/Components/charts/StackedBar';
 import { HorizontalBar } from '@/Components/charts/HorizontalBar';
 import { LineTrend } from '@/Components/charts/LineTrend';
+import { RegionalMapWidget } from '@/Components/charts/RegionalMapWidget';
 import { generationColors } from '@/lib/colors';
 import { formatNumber } from '@/lib/format';
 import { levelLabels } from '@/lib/constants';
+import { UserPlus, UserCheck } from 'lucide-react';
 
 export default function Dashboard({ metrics, insight }) {
     
@@ -39,6 +41,12 @@ export default function Dashboard({ metrics, insight }) {
         .map(([name, value]) => ({ name, value }))
         .sort((a, b) => b.value - a.value)
         .slice(0, 10) : [];
+        
+    const facilityData = hasData ? [
+        { name: 'Estate', value: Object.values(metrics.hc_by_region_facility || {}).reduce((s, r) => s + (r.Estate || 0), 0), fill: '#111827' },
+        { name: 'Mill', value: Object.values(metrics.hc_by_region_facility || {}).reduce((s, r) => s + (r.Mill || 0), 0), fill: '#22c55e' },
+        { name: 'HO', value: Object.values(metrics.hc_by_region_facility || {}).reduce((s, r) => s + (r.HO || 0), 0), fill: '#f59e0b' },
+    ] : [];
         
     const trainingTrendData = hasData && metrics.training?.trend ? Object.entries(metrics.training.trend).map(([my, val]) => ({
         name: my, value: val
@@ -72,8 +80,8 @@ export default function Dashboard({ metrics, insight }) {
                             <KpiCard title="Rata-rata Masa Kerja" value={metrics.avg_los} isDecimal={true} unit="Tahun" />
                             <KpiCard title="Risiko Pensiun" value={metrics.pensiun} note="Usia >= 55 tahun" />
                             
-                            <KpiCard title="% Gen Y + Z" value={roundPct((metrics.generations['Gen Y'] || 0) + (metrics.generations['Gen Z'] || 0), metrics.total_hc)} isDecimal={true} unit="%" />
-                            <KpiCard title="% Perempuan" value={metrics.female_pct} isDecimal={true} unit="%" />
+                            <KpiCard title="Karyawan Baru Belum Dilatih (<1 Tahun)" value={metrics.new_hire_no_training || 0} note="Perlu onboarding pelatihan" icon={UserPlus} />
+                            <KpiCard title="Karyawan Baru Masuk Tahun Ini" value={metrics.new_hire_this_year || 0} note={`Sejak Januari ${new Date().getFullYear()}`} icon={UserCheck} />
                             <KpiCard title="Total Jam Pelatihan" value={metrics.training?.total_hours || 0} isDecimal={true} unit="Jam" secondaryText={`Unlinked: ${metrics.training?.unlinked_rows || 0}`} />
                             <KpiCard title="Training Coverage" value={metrics.training?.coverage_pct || 0} isDecimal={true} unit="%" />
                         </div>
@@ -93,9 +101,35 @@ export default function Dashboard({ metrics, insight }) {
                                 <StackedBar data={stackedData} keys={stackedKeys} xAxisKey="name" />
                             </ChartCard>
 
-                            <ChartCard title="Headcount per Region" loading={!metrics}>
-                                <HorizontalBar data={regionData} dataKey="value" yAxisKey="name" />
-                            </ChartCard>
+                            <div className="lg:col-span-3 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col lg:flex-row gap-6">
+                                <div className="flex-1">
+                                    <div className="mb-4">
+                                        <h3 className="text-lg font-bold text-gray-900">Distribusi Tenaga Kerja per Operasional</h3>
+                                        <p className="text-sm text-gray-500">Estate, Mill dan Head Office</p>
+                                    </div>
+                                    {hasData && <RegionalMapWidget data={metrics.hc_by_region_facility} total={metrics.total_hc} />}
+                                </div>
+                                <div className="w-full lg:w-72 shrink-0 border-t lg:border-t-0 lg:border-l border-gray-100 pt-6 lg:pt-0 lg:pl-6 flex flex-col">
+                                    <h3 className="text-sm font-bold text-gray-900 mb-4">Total per Operasional</h3>
+                                    <div className="flex-1 min-h-[250px]">
+                                        {hasData && <DonutChart data={facilityData} dataKey="value" />}
+                                    </div>
+                                    <div className="mt-4 space-y-2 text-xs">
+                                        {facilityData.map(item => (
+                                            <div key={item.name} className="flex justify-between items-center">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.fill }}></div>
+                                                    <span className="text-gray-700">{item.name}</span>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="font-bold text-gray-900">{formatNumber(item.value)}</span>
+                                                    <span className="text-gray-400 w-8 text-right">{metrics.total_hc ? Math.round((item.value/metrics.total_hc)*100) : 0}%</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
 
                             <ChartCard title="Top 10 Perusahaan (HC)" loading={!metrics}>
                                 <HorizontalBar data={companyData} dataKey="value" yAxisKey="name" />
@@ -172,15 +206,23 @@ function roundPct(val, total) {
 function InsightCard({ insight }) {
     if (!insight) return null;
     return (
-        <div className="bg-gradient-to-r from-corporate-dark to-corporate text-white p-6 rounded-2xl shadow-md flex gap-4 items-start">
-            <div className="p-3 bg-white/10 rounded-full shrink-0">
+        <div className="relative overflow-hidden text-white p-6 rounded-2xl shadow-md flex gap-4 items-start bg-corporate-dark">
+            {/* Background Image */}
+            <div 
+                className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-40"
+                style={{ backgroundImage: `url('/PALM%20TREE_Panorama1.png')` }}
+            />
+            {/* Gradient Overlay for readability */}
+            <div className="absolute inset-0 bg-gradient-to-r from-corporate-dark/90 to-corporate/40" />
+            
+            <div className="p-3 bg-white/20 rounded-full shrink-0 relative z-10 backdrop-blur-sm">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
             </div>
-            <div>
-                <h3 className="text-lg font-bold mb-1 opacity-90">Key Insight</h3>
-                <p className="text-sm opacity-100 leading-relaxed font-medium">{insight}</p>
+            <div className="relative z-10">
+                <h3 className="text-lg font-bold mb-1 opacity-100 drop-shadow-md">Key Insight</h3>
+                <p className="text-sm opacity-100 leading-relaxed font-medium drop-shadow-md">{insight}</p>
             </div>
         </div>
     );

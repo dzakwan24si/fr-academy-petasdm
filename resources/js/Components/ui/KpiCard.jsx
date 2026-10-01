@@ -1,20 +1,22 @@
 import { formatNumber, formatDecimal } from '@/lib/format';
 import { TrendingUp, Users, Activity, BarChart2, Calendar, Target, GraduationCap, Briefcase } from 'lucide-react';
 
-export function KpiCard({ title, value, unit = '', note = '', highlight = false, isDecimal = false, secondaryText = '' }) {
+export function KpiCard({ title, value, unit = '', note = '', highlight = false, isDecimal = false, secondaryText = '', icon: CustomIcon }) {
     const displayValue = isDecimal ? formatDecimal(value) : formatNumber(value);
     
     // Choose icon based on title
-    let Icon = BarChart2;
-    const tl = title.toLowerCase();
-    if (tl.includes('karyawan') || tl.includes('perempuan') || tl.includes('gen')) {
-        Icon = Users;
-    } else if (tl.includes('umur') || tl.includes('masa kerja')) {
-        Icon = Activity;
-    } else if (tl.includes('pensiun')) {
-        Icon = TrendingUp;
-    } else if (tl.includes('pelatihan') || tl.includes('training')) {
-        Icon = GraduationCap;
+    let Icon = CustomIcon || BarChart2;
+    if (!CustomIcon) {
+        const tl = title.toLowerCase();
+        if (tl.includes('karyawan') || tl.includes('perempuan') || tl.includes('gen')) {
+            Icon = Users;
+        } else if (tl.includes('umur') || tl.includes('masa kerja')) {
+            Icon = Activity;
+        } else if (tl.includes('pensiun')) {
+            Icon = TrendingUp;
+        } else if (tl.includes('pelatihan') || tl.includes('training')) {
+            Icon = GraduationCap;
+        }
     }
 
     return (

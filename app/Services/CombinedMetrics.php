@@ -13,7 +13,7 @@ class CombinedMetrics
 {
     public function getMetrics(Request $request, EmployeeFilter $filter)
     {
-        $asOf = $request->input('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::today();
+        $asOf = $request->input('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::now();
         
         $query = Employee::query();
         $query = $filter->apply($query, $request);
@@ -66,7 +66,7 @@ class CombinedMetrics
             '16_plus_jam' => 0,
         ];
         
-        $newHireNoTrainingCount = 0;
+        $newHireNoTrainingCount = \App\Support\MetricsHelper::countNewHireNoTraining($employees, $asOf, $empHours);
         $scatter = [];
         $companyRanking = [];
 
@@ -126,9 +126,7 @@ class CombinedMetrics
                 else $retirementTraining['16_plus_jam']++;
             }
             
-            if ($tenureFloat !== null && $tenureFloat < 1 && !$hasTraining) {
-                $newHireNoTrainingCount++;
-            }
+            // Removed new hire no training inline calculation
             
             if ($tenureFloat !== null && $hasTraining) {
                 $scatter[] = [

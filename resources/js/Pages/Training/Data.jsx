@@ -251,7 +251,7 @@ export default function TrainingData({ records, filters }) {
 
             {selectedEmployee && (
                 <StaffDetailModal 
-                    staff={selectedEmployee} 
+                    employeeId={selectedEmployee.employee_id} 
                     onClose={() => setSelectedEmployee(null)} 
                 />
             )}

@@ -24,7 +24,8 @@ class WorkforceMetrics
         $latestBatch = ImportBatch::latest('id')->first();
         $batchId = $latestBatch ? $latestBatch->id : 0;
         
-        $filterHash = md5(json_encode($request->all()) . '_' . $user->id);
+        $asOfStr = $this->asOf->format('Y-m-d');
+        $filterHash = md5(json_encode($request->all()) . '_' . $user->id . '_' . $asOfStr);
         $cacheKey = "metrics_{$batchId}_{$filterHash}";
 
         return Cache::remember($cacheKey, 3600, function () use ($request, $filter, $user) {
@@ -59,6 +60,7 @@ class WorkforceMetrics
         $generationsByLevel = [];
         $hcByRegion = [];
         $hcByCompany = [];
+        $hcByRegionFacility = [];
         $retireRiskByLevel = [];
         
         $hcByGroup = [];
@@ -75,6 +77,8 @@ class WorkforceMetrics
         $birthPlaces = [];
         
         $hcByLevel = [];
+        
+        $locations = \App\Models\Location::pluck('name', 'id');
         
         $employeeIds = [];
         foreach ($employees as $e) {
@@ -137,6 +141,22 @@ class WorkforceMetrics
             
             $region = $e->region ?? 'Unknown';
             $hcByRegion[$region] = ($hcByRegion[$region] ?? 0) + 1;
+            
+            $locName = $locations[$e->location_id] ?? '';
+            // KLASIFIKASI FACILITY (TURUNAN)
+            // Karena DB tidak memiliki kolom facility_type, kita menderivasikannya dari Location Name:
+            // - HO (Head Office): Jika lokasi mengandung 'office' atau 'jakarta'
+            // - Mill: Jika lokasi mengandung 'pabrik', 'mill', 'kcp', 'biodiesel', atau 'bulking'
+            // - Estate: Default fallback untuk semua lokasi lainnya (kebun, dsb)
+            $facilityType = match(true) {
+                stripos($locName, 'office') !== false || stripos($locName, 'jakarta') !== false => 'HO',
+                stripos($locName, 'pabrik') !== false || stripos($locName, 'mill') !== false || stripos($locName, 'kcp') !== false || stripos($locName, 'biodiesel') !== false || stripos($locName, 'bulking') !== false => 'Mill',
+                default => 'Estate'
+            };
+            if (!isset($hcByRegionFacility[$region])) {
+                $hcByRegionFacility[$region] = ['Estate' => 0, 'Mill' => 0, 'HO' => 0];
+            }
+            $hcByRegionFacility[$region][$facilityType]++;
             
             $hcByCompany[$e->company_id] = ($hcByCompany[$e->company_id] ?? 0) + 1;
             
@@ -235,6 +255,7 @@ class WorkforceMetrics
             'generations' => $generations,
             'generations_by_level' => $generationsByLevel,
             'hc_by_region' => $hcByRegion,
+            'hc_by_region_facility' => $hcByRegionFacility,
             'hc_by_company' => $hcByCompanyNamed,
             'hc_by_level' => $hcByLevel,
             'retire_risk_by_level' => $retireRiskByLevel,
@@ -258,6 +279,8 @@ class WorkforceMetrics
                 'unlinked_pct' => $unlinkedPct,
                 'trend' => $trainingTrend
             ],
+            'new_hire_no_training' => \App\Support\MetricsHelper::countNewHireNoTraining($employees, $this->asOf),
+            'new_hire_this_year' => \App\Support\MetricsHelper::countNewHireThisYear($employees, $this->asOf),
             'raw_totals' => [
                 'total_hc' => $totalHc,
                 'generations' => $generations,
@@ -270,12 +293,14 @@ class WorkforceMetrics
     {
         return [
             'total_hc' => 0, 'avg_age' => 0, 'avg_los' => 0, 'female_pct' => 0, 'perm_pct' => 0, 'pensiun' => 0,
-            'generations' => [], 'generations_by_level' => [], 'hc_by_region' => [], 'hc_by_company' => [], 'hc_by_level' => [], 'retire_risk_by_level' => [],
+            'generations' => [], 'generations_by_level' => [], 'hc_by_region' => [], 'hc_by_region_facility' => [], 'hc_by_company' => [], 'hc_by_level' => [], 'retire_risk_by_level' => [],
             'hc_by_group' => [], 'hc_by_dept' => [], 'age_distribution' => [], 'population_pyramid' => [], 'gen_by_region' => [],
             'avg_age_by_dept' => [], 'gender_by_level' => [], 'marital_status' => [], 'ptkp' => [], 'job_titles' => [],
             'employment_by_region' => [], 'birth_places' => [],
             'level_order' => config('sdm.level_order', []),
             'training' => ['total_hours' => 0, 'coverage_pct' => 0, 'unlinked_rows' => 0, 'unlinked_pct' => 0, 'trend' => []],
+            'new_hire_no_training' => 0,
+            'new_hire_this_year' => 0,
             'raw_totals' => ['total_hc' => 0, 'generations' => [], 'pensiun' => 0]
         ];
     }

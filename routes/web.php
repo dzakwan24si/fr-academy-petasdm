@@ -38,8 +38,13 @@ Route::middleware('auth')->group(function () {
         return redirect('/login');
     })->name('logout');
 
+    Route::get('/pengaturan', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/pengaturan/profil', [\App\Http\Controllers\ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::put('/pengaturan/password', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('profile.password');
+
     Route::get('/dashboard', function (\Illuminate\Http\Request $request, \App\Support\EmployeeFilter $filter) {
-        $metricsService = new \App\Services\WorkforceMetrics(\Carbon\Carbon::parse('2026-09-28'));
+        $asOf = $request->input('as_of') ? \Carbon\Carbon::parse($request->input('as_of')) : \Carbon\Carbon::now();
+        $metricsService = new \App\Services\WorkforceMetrics($asOf);
         
         return Inertia::render('Dashboard', [
             'metrics' => Inertia::defer(fn () => $metricsService->getMetrics($request, $filter, $request->user())),
@@ -56,7 +61,8 @@ Route::middleware('auth')->group(function () {
     })->name('peta');
 
     Route::get('/demografi', function (\Illuminate\Http\Request $request, \App\Support\EmployeeFilter $filter) {
-        $metricsService = new \App\Services\WorkforceMetrics(\Carbon\Carbon::parse('2026-09-28'));
+        $asOf = $request->input('as_of') ? \Carbon\Carbon::parse($request->input('as_of')) : \Carbon\Carbon::now();
+        $metricsService = new \App\Services\WorkforceMetrics($asOf);
         
         return Inertia::render('Demographics', [
             'metrics' => Inertia::defer(fn () => $metricsService->getMetrics($request, $filter, $request->user())),

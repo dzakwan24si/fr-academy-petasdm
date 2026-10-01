@@ -16,11 +16,37 @@ export default function Login() {
         <div className="min-h-screen flex bg-app-bg font-sans">
             <Head title="Login" />
             
-            {/* Kolom Kiri - Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-24 bg-white relative z-10 shadow-2xl">
+            {/* Kolom Kiri - Visual Panel (Image Background) */}
+            <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-end p-12">
+                {/* Background Image */}
+                <div 
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: "url('/welcomefr.jpg')" }}
+                ></div>
+                
+                {/* Dark Green Overlay */}
+                <div className="absolute inset-0 bg-corporate-dark/80 mix-blend-multiply"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-corporate-dark/95 via-corporate-dark/40 to-transparent"></div>
+                
+                {/* Content at Bottom Left */}
+                <div className="relative z-10 w-full mb-8">
+                    <h2 className="text-4xl font-extrabold text-white mb-4 uppercase tracking-wider">
+                        Peta SDM Operasional
+                    </h2>
+                    <p className="text-lg text-white/90 font-medium mb-1">
+                        Kelola SDM Perkebunan dengan Cerdas
+                    </p>
+                    <p className="text-sm text-white/70">
+                        First Resources
+                    </p>
+                </div>
+            </div>
+
+            {/* Kolom Kanan - Form */}
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-24 bg-white relative z-10">
                 <div className="w-full max-w-md">
                     <div className="text-center lg:text-left mb-10">
-                        <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center mb-6 mx-auto lg:mx-0 shadow-md">
+                        <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center mb-6 mx-auto lg:mx-0 shadow-md hidden">
                             <img src="/logofr.png" alt="Logo" className="w-12 h-12 object-contain" />
                         </div>
                         <h1 className="text-3xl font-bold text-corporate-dark mb-3">Selamat Datang</h1>
@@ -29,68 +55,45 @@ export default function Login() {
 
                     <form onSubmit={submit} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Email atau NIK Pegawai</label>
                             <input
-                                type="email"
+                                type="text"
                                 value={data.email}
                                 onChange={e => setData('email', e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-corporate-light focus:border-corporate-light focus:bg-white outline-none transition-all"
-                                placeholder="nama@perusahaan.com"
+                                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-corporate-light focus:border-corporate-light outline-none transition-all"
+                                placeholder="Masukkan NIK atau Email"
                                 required
                             />
                             {errors.email && <p className="text-red-500 text-sm mt-2">{errors.email}</p>}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Kata Sandi</label>
                             <input
                                 type="password"
                                 value={data.password}
                                 onChange={e => setData('password', e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-corporate-light focus:border-corporate-light focus:bg-white outline-none transition-all"
-                                placeholder="••••••••"
+                                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-corporate-light focus:border-corporate-light outline-none transition-all"
+                                placeholder="Masukkan kata sandi"
                                 required
                             />
                         </div>
 
+
+
                         <button
                             type="submit"
                             disabled={processing}
-                            className="w-full bg-corporate-dark hover:bg-corporate-light text-white font-bold py-3.5 rounded-xl transition-colors disabled:opacity-70 shadow-lg shadow-corporate-dark/30 mt-4"
+                            className="w-full bg-corporate-dark hover:bg-corporate-light text-white font-bold py-3.5 rounded-lg transition-colors disabled:opacity-70 mt-6 flex justify-center items-center gap-2"
                         >
-                            {processing ? 'Masuk...' : 'Masuk ke Dashboard'}
+                            Masuk ke Sistem
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
                         </button>
                     </form>
-                </div>
-            </div>
-
-            {/* Kolom Kanan - Visual Panel */}
-            <div className="hidden lg:flex lg:w-1/2 relative bg-corporate-dark overflow-hidden items-center justify-center">
-                {/* SVG Pattern Background (Subtle leaf/geo pattern) */}
-                <div className="absolute inset-0 opacity-15">
-                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <pattern id="leaf-pattern" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
-                                <path d="M40 10 C55 10, 65 25, 40 60 C15 25, 25 10, 40 10 Z" fill="none" stroke="#ffffff" strokeWidth="1" opacity="0.6"/>
-                                <path d="M40 10 L40 60" stroke="#ffffff" strokeWidth="0.5" opacity="0.4"/>
-                            </pattern>
-                        </defs>
-                        <rect x="0" y="0" width="100%" height="100%" fill="url(#leaf-pattern)" />
-                    </svg>
-                </div>
-                
-                {/* Gradient Overlay for richness */}
-                <div className="absolute inset-0 bg-gradient-to-br from-corporate-dark/80 via-transparent to-corporate-light/60 mix-blend-multiply pointer-events-none"></div>
-                
-                {/* Content */}
-                <div className="relative z-10 text-center px-12 max-w-2xl">
-                    <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 flex items-center justify-center mx-auto mb-8 shadow-2xl">
-                        <Leaf className="text-amber-400 w-10 h-10" />
+                    
+                    <div className="mt-16 text-center">
+                        <p className="text-xs text-gray-400">&copy; {new Date().getFullYear()} Peta SDM - Internal System Portal</p>
                     </div>
-                    <h2 className="text-4xl font-bold text-white mb-6 leading-tight tracking-wide">Kelola SDM Perkebunan<br/>dengan Cerdas</h2>
-                    <p className="text-lg opacity-90 text-white/90 leading-relaxed font-light">
-                        Peta SDM Operasional menyajikan insight demografi, masa kerja, risiko pensiun, dan sebaran karyawan di seluruh area operasional Anda secara terpusat.
-                    </p>
                 </div>
             </div>
         </div>

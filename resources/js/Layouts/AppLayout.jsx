@@ -23,11 +23,12 @@ import { useState } from 'react';
 export default function AppLayout({ children, fullHeight = false, title = '' }) {
     const { auth } = usePage().props;
     const [collapsed, setCollapsed] = useState(false);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
     const currentUrl = usePage().url;
 
     // Helper untuk menu item top level (tanpa children)
     const NavItem = ({ href, icon: Icon, label }) => {
-        const active = currentUrl.startsWith(href);
+        const active = currentUrl === href || currentUrl.startsWith(href + '/') || currentUrl.startsWith(href + '?');
         return (
             <Link 
                 href={href} 
@@ -45,7 +46,7 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
 
     // Helper untuk menu sub-item
     const SubItem = ({ href, label }) => {
-        const active = currentUrl.startsWith(href);
+        const active = currentUrl === href || currentUrl.startsWith(href + '/') || currentUrl.startsWith(href + '?');
         return (
             <Link 
                 href={href} 
@@ -202,10 +203,43 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
                             <p className="text-xs text-corporate-dark opacity-80 font-medium tracking-wide">Peta SDM Operasional</p>
                         </div>
                         <div className="relative">
-                            <div className="w-10 h-10 rounded-full bg-corporate-dark text-white flex items-center justify-center font-bold text-sm shadow-md ring-2 ring-white">
-                                {auth?.user?.name?.charAt(0) || 'A'}
-                            </div>
-                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                            <button 
+                                onClick={() => setDropdownOpen(!dropdownOpen)}
+                                className="focus:outline-none flex items-center"
+                            >
+                                <div className="w-10 h-10 rounded-full bg-corporate-dark text-white flex items-center justify-center font-bold text-sm shadow-md ring-2 ring-white hover:ring-corporate-light transition-all">
+                                    {auth?.user?.name?.charAt(0) || 'A'}
+                                </div>
+                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                            </button>
+                            
+                            {dropdownOpen && (
+                                <>
+                                    <div 
+                                        className="fixed inset-0 z-40" 
+                                        onClick={() => setDropdownOpen(false)}
+                                    ></div>
+                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-1 border border-gray-100 z-50 overflow-hidden origin-top-right animate-in fade-in zoom-in-95 duration-100">
+                                        <Link 
+                                            href="/pengaturan"
+                                            className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                        >
+                                            <Settings size={16} className="text-gray-400" />
+                                            Pengaturan Akun
+                                        </Link>
+                                        <div className="border-t border-gray-100 my-1"></div>
+                                        <Link 
+                                            href="/logout"
+                                            method="post" 
+                                            as="button" 
+                                            className="block w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                        >
+                                            <LogOut size={16} className="text-red-500" />
+                                            Keluar
+                                        </Link>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </header>

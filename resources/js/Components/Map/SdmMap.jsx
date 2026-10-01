@@ -31,8 +31,10 @@ function MapEffect({ locations, selectedCompanyId, selectedLocationId }) {
             locations.filter(l => l.latitude).forEach(l => bounds.push([l.latitude, l.longitude]));
         }
 
-        if (bounds.length > 0) {
-            map.flyToBounds(bounds, { animate: true, duration: 1.5, padding: [50, 50] });
+        if (bounds.length === 1) {
+            map.flyTo(bounds[0], 12, { animate: true, duration: 1.5 });
+        } else if (bounds.length > 1) {
+            map.flyToBounds(bounds, { animate: true, duration: 1.5, padding: [50, 50], maxZoom: 12 });
         }
     }, [selectedCompanyId, selectedLocationId, locations, map]);
 
