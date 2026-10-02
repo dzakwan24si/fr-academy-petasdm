@@ -142,12 +142,11 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
 
                 {!collapsed && (
                     <div className="px-5 mb-4 mt-2 pb-4 border-b border-white/10 border-dashed relative z-10">
-                        <Link href="/admin/import" className="flex items-center justify-between bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-full text-sm font-semibold transition-colors shadow-sm">
+                        <Link href="/admin/import" className="flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-full text-sm font-semibold transition-colors shadow-sm">
                             <div className="flex items-center gap-2">
                                 <span className="font-normal text-lg leading-none">+</span>
                                 <span>Import Data</span>
                             </div>
-                            <ChevronDown size={16} className="opacity-80" />
                         </Link>
                     </div>
                 )}
@@ -161,22 +160,22 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
                 
                 <div className="flex-1 overflow-y-auto py-2 space-y-1 relative z-10" style={{ scrollbarWidth: 'none' }}>
                     <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-                    <NavItem href="/peta" icon={MapIcon} label="Peta Perusahaan" />
                     
-                    <NavGroup icon={Users} label="Analitik SDM" activeUrls={['/demografi', '/masa-kerja', '/pensiun', '/pelatihan', '/pelatihan/data', '/analisis-gabungan']}>
-                        <SubItem href="/demografi" label="Demografi" />
-                        <SubItem href="/masa-kerja" label="Masa Kerja" />
-                        <SubItem href="/pensiun" label="Risiko Pensiun" />
-                        <SubItem href="/pelatihan" label="Pelatihan" exact={true} />
-                        <SubItem href="/pelatihan/data" label="Data Training Mentah" />
-                        <SubItem href="/analisis-gabungan" label="Analisis Gabungan" />
-                    </NavGroup>
-
                     <NavGroup icon={Contact} label="Karyawan" activeUrls={['/karyawan']}>
                         <SubItem href="/karyawan" label="Direktori" />
                     </NavGroup>
 
-                    <NavGroup icon={Settings} label="Sistem" activeUrls={['/admin/lokasi', '/admin/kualitas-data']}>
+                    <NavGroup icon={Users} label="Analitik SDM" activeUrls={['/peta', '/demografi', '/masa-kerja', '/pensiun', '/pelatihan', '/analisis-gabungan']}>
+                        <SubItem href="/demografi" label="Demografi" />
+                        <SubItem href="/peta" label="Peta Perusahaan" />
+                        <SubItem href="/masa-kerja" label="Masa Kerja" />
+                        <SubItem href="/pensiun" label="Risiko Pensiun" />
+                        <SubItem href="/pelatihan" label="Pelatihan" exact={true} />
+                        <SubItem href="/analisis-gabungan" label="Analisis Gabungan" />
+                    </NavGroup>
+
+                    <NavGroup icon={Settings} label="Sistem & Data" activeUrls={['/admin/lokasi', '/admin/kualitas-data', '/pelatihan/data']}>
+                        <SubItem href="/pelatihan/data" label="Data Training Mentah" />
                         <SubItem href="/admin/lokasi" label="Master Lokasi" />
                         <SubItem href="/admin/kualitas-data" label="Kualitas Data" />
                     </NavGroup>

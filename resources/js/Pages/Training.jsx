@@ -11,8 +11,10 @@ import { formatNumber } from '@/lib/format';
 import { defaultPalette } from '@/lib/colors';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import axios from 'axios';
+import { useCrossFilter } from '@/hooks/useCrossFilter';
 
 export default function Training({ metrics, filters }) {
+    const { toggleFilter } = useCrossFilter();
     const hasData = metrics && metrics.kpi && metrics.kpi.total_rows > 0;
     
     // KPI Data
@@ -98,13 +100,13 @@ export default function Training({ metrics, filters }) {
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <ChartCard title="Reguler vs Non Reguler">
-                                <DonutChart data={regularityData} />
+                                <DonutChart data={regularityData} onClick={(entry) => toggleFilter('is_regular', entry.name === 'Reguler' ? '1' : '0')} />
                             </ChartCard>
                             <ChartCard title="Internal vs Eksternal">
-                                <DonutChart data={sourceData} />
+                                <DonutChart data={sourceData} onClick={(entry) => toggleFilter('is_internal', entry.name === 'Internal' ? '1' : '0')} />
                             </ChartCard>
                             <ChartCard title="Gender x Level (Peserta)">
-                                <StackedBar data={genderLevelData} keys={['Male', 'Female']} xAxisKey="name" colors={{ Male: '#3B82F6', Female: '#EC4899' }} />
+                                <StackedBar data={genderLevelData} keys={['Male', 'Female']} xAxisKey="name" colors={{ Male: '#3B82F6', Female: '#EC4899' }} onClick={(key) => toggleFilter('gender', key === 'Male' ? 'Laki-laki' : 'Perempuan')} />
                             </ChartCard>
                         </div>
 
@@ -124,20 +126,20 @@ export default function Training({ metrics, filters }) {
                         {/* Hours Breakdowns */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <ChartCard title="Total Jam per Region">
-                                <HorizontalBar data={hoursRegion} color={defaultPalette[3]} />
+                                <HorizontalBar data={hoursRegion} color={defaultPalette[3]} onClick={(entry) => toggleFilter('region', entry.name)} />
                             </ChartCard>
                             <ChartCard title="Total Jam per Group">
-                                <HorizontalBar data={hoursGroup} color={defaultPalette[4]} />
+                                <HorizontalBar data={hoursGroup} color={defaultPalette[4]} onClick={(entry) => toggleFilter('group', entry.name)} />
                             </ChartCard>
                             <ChartCard title="Total Jam per Departemen (Top 15)" className="h-full" height="flex-1 min-h-[500px]">
-                                <HorizontalBar data={hoursDept} color={defaultPalette[5]} />
+                                <HorizontalBar data={hoursDept} color={defaultPalette[5]} onClick={(entry) => toggleFilter('organization_name', entry.name)} />
                             </ChartCard>
                             <div className="grid grid-rows-2 gap-6">
                                 <ChartCard title="Total Jam - Golongan">
-                                    <HorizontalBar data={hoursGol} color={defaultPalette[0]} />
+                                    <HorizontalBar data={hoursGol} color={defaultPalette[0]} onClick={(entry) => toggleFilter('job_category', entry.name)} />
                                 </ChartCard>
                                 <ChartCard title="Total Jam - Level">
-                                    <HorizontalBar data={hoursLevel} color={defaultPalette[1]} />
+                                    <HorizontalBar data={hoursLevel} color={defaultPalette[1]} onClick={(entry) => toggleFilter('job_level_code', entry.name)} />
                                 </ChartCard>
                             </div>
                         </div>

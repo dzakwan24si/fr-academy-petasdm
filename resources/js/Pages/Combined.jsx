@@ -8,6 +8,8 @@ import { defaultPalette } from '@/lib/colors';
 import { formatNumber, formatDecimal } from '@/lib/format';
 import { Info } from 'lucide-react';
 import { useState } from 'react';
+import { useCrossFilter } from '@/hooks/useCrossFilter';
+import { useFilters } from '@/hooks/useFilters';
 
 function CombinedSkeleton() {
     return (
@@ -23,6 +25,8 @@ function CombinedSkeleton() {
 }
 
 export default function Combined({ metrics }) {
+    const { toggleFilter } = useCrossFilter();
+    const { options } = useFilters();
     const hasData = metrics && metrics.banner;
     const [sortKey, setSortKey] = useState('coverage');
     const [sortOrder, setSortOrder] = useState('desc');
@@ -84,12 +88,14 @@ export default function Combined({ metrics }) {
                                 <HorizontalBar 
                                     data={metrics.coverage.region.map(d => ({ name: d.name, value: d.pct }))} 
                                     color={defaultPalette[0]} 
+                                    onClick={(entry) => toggleFilter('region', entry.name)}
                                 />
                             </ChartCard>
                             <ChartCard title="Coverage Pelatihan per Level (%)">
                                 <HorizontalBar 
                                     data={metrics.coverage.level.map(d => ({ name: d.name, value: d.pct }))} 
                                     color={defaultPalette[1]} 
+                                    onClick={(entry) => toggleFilter('job_level_code', entry.name)}
                                 />
                             </ChartCard>
                         </div>
@@ -99,12 +105,17 @@ export default function Combined({ metrics }) {
                                 <HorizontalBar 
                                     data={metrics.coverage.dept.slice(0, 10).map(d => ({ name: d.name, value: d.pct }))} 
                                     color={defaultPalette[2]} 
+                                    onClick={(entry) => toggleFilter('organization_name', entry.name)}
                                 />
                             </ChartCard>
                             <ChartCard title="Coverage Pelatihan per Perusahaan (Top 10)">
                                 <HorizontalBar 
                                     data={metrics.coverage.company.slice(0, 10).map(d => ({ name: d.name, value: d.pct }))} 
                                     color={defaultPalette[3]} 
+                                    onClick={(entry) => {
+                                        const comp = options?.companies?.find(c => c.name === entry.name || c.code === entry.name);
+                                        toggleFilter('company_id', comp ? String(comp.id) : entry.name);
+                                    }}
                                 />
                             </ChartCard>
                         </div>
@@ -115,18 +126,21 @@ export default function Combined({ metrics }) {
                                 <HorizontalBar 
                                     data={metrics.hours.generation.map(d => ({ name: d.name, value: d.avg_hours }))} 
                                     color={defaultPalette[4]} 
+                                    onClick={(entry) => toggleFilter('generation', entry.name)}
                                 />
                             </ChartCard>
                             <ChartCard title="Rata-rata Jam per Level">
                                 <HorizontalBar 
                                     data={metrics.hours.level.map(d => ({ name: d.name, value: d.avg_hours }))} 
                                     color={defaultPalette[5]} 
+                                    onClick={(entry) => toggleFilter('job_level_code', entry.name)}
                                 />
                             </ChartCard>
                             <ChartCard title="Rata-rata Jam per Gender">
                                 <HorizontalBar 
                                     data={metrics.hours.gender.map(d => ({ name: d.name, value: d.avg_hours }))} 
                                     color={defaultPalette[6]} 
+                                    onClick={(entry) => toggleFilter('gender', entry.name)}
                                 />
                             </ChartCard>
                         </div>

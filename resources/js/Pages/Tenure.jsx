@@ -10,6 +10,7 @@ import { ScatterChart } from '@/Components/charts/ScatterChart';
 import { defaultPalette } from '@/lib/colors';
 import { formatNumber } from '@/lib/format';
 import { useState } from 'react';
+import { useCrossFilter } from '@/hooks/useCrossFilter';
 
 function TenureSkeleton() {
     return (
@@ -24,6 +25,7 @@ function TenureSkeleton() {
 }
 
 export default function Tenure({ metrics }) {
+    const { toggleFilter } = useCrossFilter();
     const hasData = metrics && metrics.histogram && Object.keys(metrics.histogram).length > 0;
     const [trendType, setTrendType] = useState('yearly');
 
@@ -99,10 +101,10 @@ export default function Tenure({ metrics }) {
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <ChartCard title="Rata-rata Masa Kerja per Region (Tahun)">
-                                <HorizontalBar data={avgRegionData} color={defaultPalette[2]} />
+                                <HorizontalBar data={avgRegionData} color={defaultPalette[2]} onClick={(entry) => toggleFilter('region', entry.name)} />
                             </ChartCard>
                             <ChartCard title="Rata-rata Masa Kerja per Level (Tahun)">
-                                <HorizontalBar data={avgLevelData} color={defaultPalette[3]} />
+                                <HorizontalBar data={avgLevelData} color={defaultPalette[3]} onClick={(entry) => toggleFilter('job_level_code', entry.name)} />
                             </ChartCard>
                         </div>
 

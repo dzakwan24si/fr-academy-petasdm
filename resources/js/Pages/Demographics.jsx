@@ -13,8 +13,10 @@ import { formatNumber } from '@/lib/format';
 import { defaultPalette } from '@/lib/colors';
 import { useCopyAsImage } from '@/hooks/useCopyAsImage';
 import { CopyButton } from '@/Components/ui/CopyButton';
+import { useCrossFilter } from '@/hooks/useCrossFilter';
 
 export default function Demographics({ metrics }) {
+    const { toggleFilter } = useCrossFilter();
     const hasData = metrics && metrics.total_hc > 0;
     
     // Derived datasets
@@ -143,10 +145,10 @@ export default function Demographics({ metrics }) {
                         {/* Section 1: HC Overview */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <ChartCard title="HC per Region">
-                                <HorizontalBar data={regionData} />
+                                <HorizontalBar data={regionData} onClick={(entry) => toggleFilter('region', entry.name)} />
                             </ChartCard>
                             <ChartCard title="HC per Group">
-                                <HorizontalBar data={groupData} color={defaultPalette[1]} />
+                                <HorizontalBar data={groupData} color={defaultPalette[1]} onClick={(entry) => toggleFilter('group', entry.name)} />
                             </ChartCard>
                         </div>
                         
@@ -179,7 +181,7 @@ export default function Demographics({ metrics }) {
                         {/* Section 4: Job Levels & Gender Details */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <ChartCard title="HC per Level Jabatan">
-                                <HorizontalBar data={levelData} color={defaultPalette[3]} />
+                                <HorizontalBar data={levelData} color={defaultPalette[3]} onClick={(entry) => toggleFilter('job_level_code', entry.name)} />
                             </ChartCard>
                             <ChartCard title="Gender per Level Jabatan" className="lg:col-span-2">
                                 <StackedBar data={genderLevelData} keys={['Male', 'Female']} xAxisKey="name" colors={{ Male: '#3B82F6', Female: '#EC4899' }} />
@@ -189,10 +191,10 @@ export default function Demographics({ metrics }) {
                         {/* Section 5: Demographics Details */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <ChartCard title="Gender">
-                                <DonutChart data={genderData} colors={{ 'Laki-laki': '#3B82F6', 'Perempuan': '#EC4899' }} />
+                                <DonutChart data={genderData} colors={{ 'Laki-laki': '#3B82F6', 'Perempuan': '#EC4899' }} onClick={(entry) => toggleFilter('gender', entry.name)} />
                             </ChartCard>
                             <ChartCard title="Status Pernikahan">
-                                <DonutChart data={maritalData} />
+                                <DonutChart data={maritalData} onClick={(entry) => toggleFilter('marital_status', entry.name)} />
                             </ChartCard>
                             <ChartCard title="PTKP">
                                 <HorizontalBar data={ptkpData} color={defaultPalette[4]} />
@@ -215,7 +217,7 @@ export default function Demographics({ metrics }) {
                             </div>
                             
                             <ChartCard title="Status Karyawan per Region">
-                                <StackedBar data={empRegionData} keys={empTypes} xAxisKey="name" />
+                                <StackedBar data={empRegionData} keys={empTypes} xAxisKey="name" onClick={(key) => toggleFilter('employment_type', key)} />
                             </ChartCard>
                             
                             <ChartCard title="Top 10 Tempat Lahir">

@@ -14,8 +14,13 @@ import { levelLabels } from '@/lib/constants';
 import { UserPlus, UserCheck } from 'lucide-react';
 import { useCopyAsImage } from '@/hooks/useCopyAsImage';
 import { CopyButton } from '@/Components/ui/CopyButton';
+import { useCrossFilter } from '@/hooks/useCrossFilter';
+import { useFilters } from '@/hooks/useFilters';
 
 export default function Dashboard({ metrics, insight }) {
+    
+    const { toggleFilter } = useCrossFilter();
+    const { options } = useFilters();
     
     // Transform metrics for charts
     const hasData = metrics && metrics.total_hc > 0;
@@ -67,7 +72,17 @@ export default function Dashboard({ metrics, insight }) {
     }).filter(row => row.total > 0).sort((a, b) => b.pct - a.pct) : [];
 
     const { ref: sectionRef, isCopying, status, handleCopy } = useCopyAsImage({ title: 'Distribusi Tenaga Kerja per Operasional' });
-    const { ref: retireRef, isCopying: retireCopying, status: retireStatus, handleCopy: handleRetireCopy } = useCopyAsImage({ title: 'Risiko Pensiun per Level Jabatan' });
+    const { ref: retireRef, isCopying: retireCopying, status: retireStatus, handleCopy: handleRetireCopy } = useCopyAsImage({ 
+        title: 'Risiko Pensiun per Level Jabatan',
+        onBeforeCapture: (el) => {
+            const scroller = el.querySelector('.overflow-x-auto');
+            if(scroller) scroller.style.overflow = 'visible';
+        },
+        onAfterCapture: (el) => {
+            const scroller = el.querySelector('.overflow-x-auto');
+            if(scroller) scroller.style.overflow = '';
+        }
+    });
 
     return (
         <AppLayout title="Dashboard">
@@ -99,11 +114,11 @@ export default function Dashboard({ metrics, insight }) {
                         {/* Charts Grid */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <ChartCard title="Komposisi Generasi" loading={!metrics}>
-                                <DonutChart data={genData} dataKey="value" />
+                                <DonutChart data={genData} dataKey="value" onClick={(entry) => toggleFilter('generation', entry.name)} />
                             </ChartCard>
 
                             <ChartCard title="Generasi per Level Jabatan" loading={!metrics} className="lg:col-span-2">
-                                <StackedBar data={stackedData} keys={stackedKeys} xAxisKey="name" />
+                                <StackedBar data={stackedData} keys={stackedKeys} xAxisKey="name" onClick={(key) => toggleFilter('generation', key)} />
                             </ChartCard>
 
                             <div ref={sectionRef} className="lg:col-span-3 bg-white p-6 rounded-2xl shadow-[0_4px_20px_rgba(6,78,59,0.08)] border-0 flex flex-col lg:flex-row gap-6 relative transition-all duration-300 [@media(hover:hover)]:hover:shadow-[0_8px_30px_rgba(6,78,59,0.12)] [@media(hover:hover)]:hover:-translate-y-1">
@@ -138,7 +153,16 @@ export default function Dashboard({ metrics, insight }) {
                             </div>
 
                             <ChartCard title="Top 10 Perusahaan (HC)" loading={!metrics}>
-                                <HorizontalBar data={companyData} dataKey="value" yAxisKey="name" />
+                                <HorizontalBar 
+                                    data={companyData} 
+                                    dataKey="value" 
+                                    yAxisKey="name" 
+                                    onClick={(entry) => {
+                                        const comp = options?.companies?.find(c => c.name === entry.name || c.code === entry.name);
+                                        if (comp) toggleFilter('company_id', String(comp.id));
+                                        else toggleFilter('company_id', entry.name);
+                                    }} 
+                                />
                             </ChartCard>
 
                             <ChartCard title="Tren Jam Pelatihan" loading={!metrics}>

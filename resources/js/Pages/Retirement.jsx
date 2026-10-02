@@ -8,6 +8,8 @@ import { defaultPalette } from '@/lib/colors';
 import { formatNumber } from '@/lib/format';
 import { useCopyAsImage } from '@/hooks/useCopyAsImage';
 import { CopyButton } from '@/Components/ui/CopyButton';
+import { useCrossFilter } from '@/hooks/useCrossFilter';
+import { useFilters } from '@/hooks/useFilters';
 
 function RetirementSkeleton() {
     return (
@@ -46,6 +48,8 @@ function HeatCell({ pct }) {
 }
 
 export default function Retirement({ metrics }) {
+    const { toggleFilter } = useCrossFilter();
+    const { options } = useFilters();
     const hasData = metrics && metrics.tables;
 
     const projData = hasData ? Object.entries(metrics.projection).map(([year, value]) => ({ name: year, value })) : [];
@@ -54,7 +58,17 @@ export default function Retirement({ metrics }) {
     
     const compBarData = hasData ? Object.entries(metrics.bars.company).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value).slice(0, 10) : [];
 
-    const { ref: levelRef, isCopying: levelCopying, status: levelStatus, handleCopy: handleLevelCopy } = useCopyAsImage({ title: 'Risiko per Level Jabatan' });
+    const { ref: levelRef, isCopying: levelCopying, status: levelStatus, handleCopy: handleLevelCopy } = useCopyAsImage({ 
+        title: 'Risiko per Level Jabatan',
+        onBeforeCapture: (el) => {
+            const scroller = el.querySelector('.overflow-x-auto');
+            if(scroller) scroller.style.overflow = 'visible';
+        },
+        onAfterCapture: (el) => {
+            const scroller = el.querySelector('.overflow-x-auto');
+            if(scroller) scroller.style.overflow = '';
+        }
+    });
 
     return (
         <AppLayout title="Risiko Pensiun">
@@ -108,7 +122,7 @@ export default function Retirement({ metrics }) {
                             </ChartCard>
                             
                             <ChartCard title="Risiko Pensiun per Region (HC)">
-                                <HorizontalBar data={regBarData} color={defaultPalette[5]} />
+                                <HorizontalBar data={regBarData} color={defaultPalette[5]} onClick={(entry) => toggleFilter('region', entry.name)} />
                             </ChartCard>
                         </div>
 
@@ -128,7 +142,11 @@ export default function Retirement({ metrics }) {
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
                                             {metrics.tables.level.map(row => (
-                                                <tr key={row.name} className="hover:bg-gray-50 transition-colors">
+                                                <tr 
+                                                    key={row.name} 
+                                                    className="hover:bg-gray-100 transition-colors cursor-pointer"
+                                                    onClick={() => toggleFilter('job_level_code', row.name)}
+                                                >
                                                     <td className="px-4 py-3 font-medium text-gray-900">{row.name}</td>
                                                     <td className="px-4 py-3 text-right">{formatNumber(row.total)}</td>
                                                     <td className="px-4 py-3 text-right text-red-600 font-medium">{formatNumber(row.value)}</td>
@@ -153,7 +171,11 @@ export default function Retirement({ metrics }) {
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
                                             {metrics.tables.dept.map(row => (
-                                                <tr key={row.name} className="hover:bg-gray-50 transition-colors">
+                                                <tr 
+                                                    key={row.name} 
+                                                    className="hover:bg-gray-100 transition-colors cursor-pointer"
+                                                    onClick={() => toggleFilter('organization_name', row.name)}
+                                                >
                                                     <td className="px-4 py-3 font-medium text-gray-900 truncate max-w-[200px]" title={row.name}>{row.name}</td>
                                                     <td className="px-4 py-3 text-right text-red-600 font-medium">{formatNumber(row.value)}</td>
                                                     <td className="px-4 py-3 text-right"><HeatCell pct={row.pct} /></td>
@@ -167,7 +189,14 @@ export default function Retirement({ metrics }) {
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <ChartCard title="Risiko per Perusahaan (Top 10)">
-                                <HorizontalBar data={compBarData} color={defaultPalette[6]} />
+                                <HorizontalBar 
+                                    data={compBarData} 
+                                    color={defaultPalette[6]} 
+                                    onClick={(entry) => {
+                                        const comp = options?.companies?.find(c => c.name === entry.name || c.code === entry.name);
+                                        toggleFilter('company_id', comp ? String(comp.id) : entry.name);
+                                    }}
+                                />
                             </ChartCard>
                             
                             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">

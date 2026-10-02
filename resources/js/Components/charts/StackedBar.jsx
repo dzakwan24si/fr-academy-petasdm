@@ -2,7 +2,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { formatNumber } from '@/lib/format';
 import { generationColors, defaultPalette } from '@/lib/colors';
 
-export function StackedBar({ data, keys = [], xAxisKey = 'name', colors }) {
+export function StackedBar({ data, keys = [], xAxisKey = 'name', colors, onClick }) {
     if (!data || data.length === 0 || keys.length === 0) return null;
 
     const getColor = (key, index) => {
@@ -20,10 +20,18 @@ export function StackedBar({ data, keys = [], xAxisKey = 'name', colors }) {
                 <Tooltip 
                     formatter={(value) => formatNumber(value)}
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    cursor={!onClick ? { fill: '#F3F4F6' } : false}
                 />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
                 {keys.map((key, index) => (
-                    <Bar key={key} dataKey={key} stackId="a" fill={getColor(key, index)} />
+                    <Bar 
+                        key={key} 
+                        dataKey={key} 
+                        stackId="a" 
+                        fill={getColor(key, index)} 
+                        onClick={(data) => onClick && onClick(key, data?.payload?.[xAxisKey] || data?.[xAxisKey] || data?.name)}
+                        className={onClick ? "cursor-pointer hover:opacity-80 transition-opacity outline-none" : ""}
+                    />
                 ))}
             </BarChart>
         </ResponsiveContainer>

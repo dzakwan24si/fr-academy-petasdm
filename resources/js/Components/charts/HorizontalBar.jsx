@@ -2,7 +2,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { formatNumber } from '@/lib/format';
 import { defaultPalette } from '@/lib/colors';
 
-export function HorizontalBar({ data, nameKey = 'name', dataKey = 'value', color = defaultPalette[0], labelInside = true }) {
+export function HorizontalBar({ data, nameKey = 'name', dataKey = 'value', color = defaultPalette[0], labelInside = true, onClick }) {
     if (!data || data.length === 0) return null;
 
     return (
@@ -14,10 +14,16 @@ export function HorizontalBar({ data, nameKey = 'name', dataKey = 'value', color
                 <Tooltip 
                     formatter={(value) => [formatNumber(value), 'Jumlah']}
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    cursor={!onClick ? { fill: '#F3F4F6' } : false}
                 />
                 <Bar dataKey={dataKey} fill={color} radius={[0, 4, 4, 0]}>
                     {data.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color || color} />
+                        <Cell 
+                            key={`cell-${index}`} 
+                            fill={entry.color || color} 
+                            onClick={() => onClick && onClick(entry)}
+                            className={onClick ? "cursor-pointer hover:opacity-80 transition-opacity outline-none" : ""}
+                        />
                     ))}
                 </Bar>
             </BarChart>

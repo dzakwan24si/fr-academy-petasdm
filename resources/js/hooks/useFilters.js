@@ -9,7 +9,6 @@ export function useFilters(isTrainingPage = false) {
     const { url } = usePage();
     const searchParams = new URLSearchParams(url.split('?')[1] || '');
     
-    // Parse query params into object
     const [filters, setFilters] = useState({
         region: searchParams.getAll('region[]'),
         group: searchParams.getAll('group[]'),
@@ -20,6 +19,7 @@ export function useFilters(isTrainingPage = false) {
         employment_type: searchParams.getAll('employment_type[]'),
         generation: searchParams.getAll('generation[]'),
         gender: searchParams.getAll('gender[]'),
+        marital_status: searchParams.getAll('marital_status[]'),
         year: searchParams.get('year') || '',
         month: searchParams.get('month') || '',
         nik_status: searchParams.get('nik_status') || '',
@@ -69,7 +69,7 @@ export function useFilters(isTrainingPage = false) {
         const emptyFilters = {
             region: [], group: [], company_id: [], location_id: [],
             organization_name: [], job_level_code: [], employment_type: [],
-            generation: [], gender: [], year: '', month: '',
+            generation: [], gender: [], marital_status: [], year: '', month: '',
             nik_status: '', job_category: [], is_regular: '', is_internal: '', level: []
         };
         setFilters(emptyFilters);

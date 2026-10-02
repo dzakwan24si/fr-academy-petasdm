@@ -225,8 +225,8 @@ export default function TrainingData({ records, filters }) {
                     </div>
                     <div className="flex items-center gap-1">
                         {records.links.map((link, i) => {
-                            const isPrev = link.label.includes('Previous');
-                            const isNext = link.label.includes('Next');
+                            const isPrev = String(link.label).toLowerCase().includes('previous');
+                            const isNext = String(link.label).toLowerCase().includes('next');
                             
                             return (
                                 <Link

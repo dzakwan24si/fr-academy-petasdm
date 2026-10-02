@@ -2,7 +2,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, L
 import { formatNumber } from '@/lib/format';
 import { generationColors, defaultPalette } from '@/lib/colors';
 
-export function DonutChart({ data, nameKey = 'name', dataKey = 'value', colors }) {
+export function DonutChart({ data, nameKey = 'name', dataKey = 'value', colors, onClick }) {
     if (!data || data.length === 0) return null;
 
     const getColor = (name, index) => {
@@ -18,7 +18,7 @@ export function DonutChart({ data, nameKey = 'name', dataKey = 'value', colors }
         const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
 
         return (
-            <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize="12" fontWeight="bold">
+            <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize="12" fontWeight="bold" className="pointer-events-none">
                 {`${(percent * 100).toFixed(0)}%`}
             </text>
         );
@@ -40,7 +40,12 @@ export function DonutChart({ data, nameKey = 'name', dataKey = 'value', colors }
                     label={renderCustomizedLabel}
                 >
                     {data.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={getColor(entry[nameKey], index)} />
+                        <Cell 
+                            key={`cell-${index}`} 
+                            fill={getColor(entry[nameKey], index)} 
+                            onClick={() => onClick && onClick(entry)}
+                            className={onClick ? "cursor-pointer hover:opacity-80 transition-opacity outline-none" : ""}
+                        />
                     ))}
                 </Pie>
                 <RechartsTooltip 
