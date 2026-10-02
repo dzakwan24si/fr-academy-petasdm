@@ -19,17 +19,22 @@ export function KpiCard({ title, value, unit = '', note = '', highlight = false,
         }
     }
 
+    const tlLower = title.toLowerCase();
+    const needsAttention = tlLower.includes('risiko') || tlLower.includes('belum dilatih') || tlLower.includes('anomali') || highlight;
+    const borderClass = needsAttention ? 'border border-amber-500' : 'border border-[#40826D]/40';
+    const iconBgClass = needsAttention ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-[#40826D]';
+
     return (
-        <div className={`bg-white p-5 rounded-2xl shadow-sm border ${highlight ? 'border-amber-200 bg-amber-50/20' : 'border-gray-100'} flex flex-col justify-between h-full relative overflow-hidden group`}>
+        <div className={`bg-white p-4 rounded-xl shadow-[0_4px_20px_rgba(6,78,59,0.08)] ${borderClass} transition-all duration-300 [@media(hover:hover)]:hover:shadow-[0_8px_30px_rgba(6,78,59,0.12)] [@media(hover:hover)]:hover:-translate-y-1 flex flex-col justify-between h-full relative overflow-hidden group`}>
             {/* Subtle background decoration for highlight */}
             {highlight && (
                 <div className="absolute -right-6 -top-6 w-24 h-24 bg-amber-500 rounded-full blur-3xl opacity-10 pointer-events-none transition-transform group-hover:scale-110"></div>
             )}
             
             <div className="flex justify-between items-start mb-4 relative z-10">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</h3>
-                <div className={`p-2 rounded-xl flex-shrink-0 ${highlight ? 'bg-amber-100 text-amber-600' : 'bg-gray-50 text-gray-400'}`}>
-                    <Icon size={16} strokeWidth={2.5} />
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider pr-2">{title}</h3>
+                <div className={`p-2.5 rounded-full flex-shrink-0 ${iconBgClass}`}>
+                    <Icon size={22} strokeWidth={2.5} />
                 </div>
             </div>
             

@@ -6,6 +6,8 @@ import { HorizontalBar } from '@/Components/charts/HorizontalBar';
 import { Histogram } from '@/Components/charts/Histogram';
 import { defaultPalette } from '@/lib/colors';
 import { formatNumber } from '@/lib/format';
+import { useCopyAsImage } from '@/hooks/useCopyAsImage';
+import { CopyButton } from '@/Components/ui/CopyButton';
 
 function RetirementSkeleton() {
     return (
@@ -51,6 +53,8 @@ export default function Retirement({ metrics }) {
     const regBarData = hasData ? Object.entries(metrics.bars.region).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value) : [];
     
     const compBarData = hasData ? Object.entries(metrics.bars.company).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value).slice(0, 10) : [];
+
+    const { ref: levelRef, isCopying: levelCopying, status: levelStatus, handleCopy: handleLevelCopy } = useCopyAsImage({ title: 'Risiko per Level Jabatan' });
 
     return (
         <AppLayout title="Risiko Pensiun">
@@ -109,8 +113,9 @@ export default function Retirement({ metrics }) {
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                                <h3 className="font-bold text-gray-800 mb-4">Risiko per Level Jabatan</h3>
+                            <div ref={levelRef} className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_rgba(6,78,59,0.08)] border-0 relative transition-all duration-300 [@media(hover:hover)]:hover:shadow-[0_8px_30px_rgba(6,78,59,0.12)] [@media(hover:hover)]:hover:-translate-y-1">
+                                <CopyButton handleCopy={handleLevelCopy} status={levelStatus} isCopying={levelCopying} />
+                                <h3 className="font-bold text-gray-800 pb-3 mb-4 pr-12 border-b border-gray-100/60">Risiko per Level Jabatan</h3>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-sm text-left">
                                         <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">

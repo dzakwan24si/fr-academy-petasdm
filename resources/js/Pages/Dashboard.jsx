@@ -12,6 +12,8 @@ import { generationColors } from '@/lib/colors';
 import { formatNumber } from '@/lib/format';
 import { levelLabels } from '@/lib/constants';
 import { UserPlus, UserCheck } from 'lucide-react';
+import { useCopyAsImage } from '@/hooks/useCopyAsImage';
+import { CopyButton } from '@/Components/ui/CopyButton';
 
 export default function Dashboard({ metrics, insight }) {
     
@@ -64,6 +66,9 @@ export default function Dashboard({ metrics, insight }) {
         };
     }).filter(row => row.total > 0).sort((a, b) => b.pct - a.pct) : [];
 
+    const { ref: sectionRef, isCopying, status, handleCopy } = useCopyAsImage({ title: 'Distribusi Tenaga Kerja per Operasional' });
+    const { ref: retireRef, isCopying: retireCopying, status: retireStatus, handleCopy: handleRetireCopy } = useCopyAsImage({ title: 'Risiko Pensiun per Level Jabatan' });
+
     return (
         <AppLayout title="Dashboard">
             <Head title="Dashboard" />
@@ -101,7 +106,8 @@ export default function Dashboard({ metrics, insight }) {
                                 <StackedBar data={stackedData} keys={stackedKeys} xAxisKey="name" />
                             </ChartCard>
 
-                            <div className="lg:col-span-3 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col lg:flex-row gap-6">
+                            <div ref={sectionRef} className="lg:col-span-3 bg-white p-6 rounded-2xl shadow-[0_4px_20px_rgba(6,78,59,0.08)] border-0 flex flex-col lg:flex-row gap-6 relative transition-all duration-300 [@media(hover:hover)]:hover:shadow-[0_8px_30px_rgba(6,78,59,0.12)] [@media(hover:hover)]:hover:-translate-y-1">
+                                <CopyButton handleCopy={handleCopy} status={status} isCopying={isCopying} />
                                 <div className="flex-1">
                                     <div className="mb-4">
                                         <h3 className="text-lg font-bold text-gray-900">Distribusi Tenaga Kerja per Operasional</h3>
@@ -140,8 +146,9 @@ export default function Dashboard({ metrics, insight }) {
                             </ChartCard>
                             
                             {/* Table Risiko Pensiun */}
-                            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 lg:col-span-3">
-                                <h3 className="font-bold text-gray-800 mb-4">Risiko Pensiun per Level Jabatan</h3>
+                            <div ref={retireRef} className="bg-white rounded-2xl p-4 shadow-[0_4px_20px_rgba(6,78,59,0.08)] border-0 lg:col-span-3 relative transition-all duration-300 [@media(hover:hover)]:hover:shadow-[0_8px_30px_rgba(6,78,59,0.12)] [@media(hover:hover)]:hover:-translate-y-1">
+                                <CopyButton handleCopy={handleRetireCopy} status={retireStatus} isCopying={retireCopying} />
+                                <h3 className="font-bold text-gray-800 pb-3 mb-4 pr-12 border-b border-gray-100/60">Risiko Pensiun per Level Jabatan</h3>
                                 {retireRiskData.length > 0 ? (
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-sm text-left">

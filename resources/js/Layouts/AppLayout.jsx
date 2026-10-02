@@ -18,6 +18,7 @@ import {
     ChevronDown,
     ChevronUp
 } from 'lucide-react';
+import { PalmFrond } from '@/Components/ui/PalmFrond';
 import { useState } from 'react';
 
 export default function AppLayout({ children, fullHeight = false, title = '' }) {
@@ -32,12 +33,12 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
         return (
             <Link 
                 href={href} 
-                className={`flex items-center justify-between px-4 py-2.5 mx-2 rounded-lg transition-colors group
-                    ${active ? 'text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-900 font-medium'}`}
+                className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} px-4 py-2.5 mx-2 rounded-full transition-colors group relative z-10
+                    ${active ? 'bg-amber-500 text-white font-bold' : 'text-green-100/70 hover:text-white font-medium hover:bg-white/5'}`}
                 title={collapsed ? label : undefined}
             >
-                <div className="flex items-center gap-3">
-                    <Icon size={18} strokeWidth={2} className={active ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-600'} />
+                <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}>
+                    <Icon size={18} strokeWidth={2} className={active ? 'text-white' : 'text-green-100/60 group-hover:text-white'} />
                     {!collapsed && <span className="text-[13px]">{label}</span>}
                 </div>
             </Link>
@@ -45,13 +46,15 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
     };
 
     // Helper untuk menu sub-item
-    const SubItem = ({ href, label }) => {
-        const active = currentUrl === href || currentUrl.startsWith(href + '/') || currentUrl.startsWith(href + '?');
+    const SubItem = ({ href, label, exact = false }) => {
+        const active = exact 
+            ? currentUrl === href || currentUrl.startsWith(href + '?')
+            : currentUrl === href || currentUrl.startsWith(href + '/') || currentUrl.startsWith(href + '?');
         return (
             <Link 
                 href={href} 
-                className={`flex items-center px-4 py-2 mx-2 mb-1 rounded-full transition-colors group
-                    ${active ? 'bg-stone-100 text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-900 font-medium'}`}
+                className={`flex items-center px-4 py-2 mx-2 mb-1 rounded-full transition-colors group relative z-10
+                    ${active ? 'bg-amber-500 text-white font-bold' : 'text-green-100/70 hover:text-white font-medium hover:bg-white/5'}`}
             >
                 <div className="flex items-center pl-9">
                     <span className="text-[13px]">{label}</span>
@@ -67,28 +70,28 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
 
         if (collapsed) {
             return (
-                <div className="group relative">
-                    <div className={`flex items-center justify-center px-4 py-2.5 mx-2 rounded-lg transition-colors cursor-pointer
-                        ${isActive ? 'text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-900 font-medium'}`}
+                <div className="group relative z-10">
+                    <div className={`flex items-center justify-center px-4 py-2.5 mx-2 rounded-full transition-colors cursor-pointer
+                        ${isActive ? 'bg-amber-500 text-white font-bold' : 'text-green-100/70 hover:text-white font-medium hover:bg-white/5'}`}
                     >
-                        <Icon size={18} strokeWidth={2} className={isActive ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-600'} />
+                        <Icon size={18} strokeWidth={2} className={isActive ? 'text-white' : 'text-green-100/60 group-hover:text-white'} />
                     </div>
                 </div>
             );
         }
 
         return (
-            <div>
+            <div className="relative z-10">
                 <div 
                     onClick={() => setIsOpen(!isOpen)}
-                    className={`flex items-center justify-between px-4 py-2.5 mx-2 rounded-lg transition-colors cursor-pointer group
-                        ${isActive ? 'text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-900 font-medium'}`}
+                    className={`flex items-center justify-between px-4 py-2.5 mx-2 rounded-full transition-colors cursor-pointer group
+                        ${isActive ? 'text-white font-bold' : 'text-green-100/70 hover:text-white font-medium hover:bg-white/5'}`}
                 >
                     <div className="flex items-center gap-3">
-                        <Icon size={18} strokeWidth={2} className={isActive ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-600'} />
+                        <Icon size={18} strokeWidth={2} className={isActive ? 'text-white' : 'text-green-100/60 group-hover:text-white'} />
                         <span className="text-[13px]">{label}</span>
                     </div>
-                    {isOpen ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+                    {isOpen ? <ChevronUp size={16} className="text-white/70" /> : <ChevronDown size={16} className="text-green-100/50" />}
                 </div>
                 {isOpen && (
                     <div className="mt-1">
@@ -100,19 +103,29 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
     };
 
     return (
-        <div className="min-h-screen bg-app-bg flex font-sans text-gray-800">
+        <div className="min-h-screen bg-green-50/50 flex font-sans text-gray-800">
             {/* Sidebar */}
-            <aside className={`${collapsed ? 'w-20' : 'w-64'} bg-white border-r border-gray-100 flex flex-col transition-all duration-300 z-20 shrink-0`}>
-                <div className="h-20 flex items-center justify-between px-4 shrink-0 relative bg-white">
+            <aside className={`${collapsed ? 'w-20' : 'w-64'} bg-corporate-dark border-r border-corporate-dark/20 flex flex-col transition-all duration-300 z-20 shrink-0 relative`}>
+                <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none flex flex-wrap gap-10 justify-around items-around overflow-hidden" aria-hidden="true">
+                    {[...Array(20)].map((_, i) => (
+                        <PalmFrond key={i} size={80} className="text-white transform -rotate-45" strokeWidth={1} />
+                    ))}
+                </div>
+
+                <div className="h-20 flex items-center justify-between px-4 shrink-0 relative z-10">
                     {!collapsed && (
                         <div className="flex items-center gap-3 px-2 w-full">
-                            <img src="/logofr.png" alt="Logo" className="h-9 w-auto object-contain" />
-                            <span className="font-semibold text-gray-800 text-[1.1rem] tracking-normal">Peta SDM</span>
+                            <div className="bg-white p-1 rounded-lg">
+                                <img src="/logofr.png" alt="Logo" className="h-7 w-auto object-contain" />
+                            </div>
+                            <span className="font-semibold text-white text-[1.1rem] tracking-normal">Peta SDM</span>
                         </div>
                     )}
                     {collapsed && (
                         <div className="mx-auto flex items-center justify-center">
-                            <img src="/logofr.png" alt="Logo" className="h-9 w-9 object-contain" />
+                            <div className="bg-white p-1 rounded-lg">
+                                <img src="/logofr.png" alt="Logo" className="h-6 w-auto object-contain" />
+                            </div>
                         </div>
                     )}
                     
@@ -128,8 +141,8 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
                 </div>
 
                 {!collapsed && (
-                    <div className="px-5 mb-4 mt-2 pb-4 border-b border-gray-100 border-dashed">
-                        <Link href="/admin/import" className="flex items-center justify-between bg-[#F85628] hover:bg-[#E5481B] text-white px-4 py-2.5 rounded-full text-sm font-semibold transition-colors shadow-sm">
+                    <div className="px-5 mb-4 mt-2 pb-4 border-b border-white/10 border-dashed relative z-10">
+                        <Link href="/admin/import" className="flex items-center justify-between bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-full text-sm font-semibold transition-colors shadow-sm">
                             <div className="flex items-center gap-2">
                                 <span className="font-normal text-lg leading-none">+</span>
                                 <span>Import Data</span>
@@ -139,14 +152,14 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
                     </div>
                 )}
                 {collapsed && (
-                    <div className="px-3 mb-4 mt-2 pb-4 flex justify-center border-b border-gray-100 border-dashed">
-                        <Link href="/admin/import" className="bg-[#F85628] hover:bg-[#E5481B] text-white p-2.5 rounded-full transition-colors shadow-sm">
+                    <div className="px-3 mb-4 mt-2 pb-4 flex justify-center border-b border-white/10 border-dashed relative z-10">
+                        <Link href="/admin/import" className="bg-amber-500 hover:bg-amber-600 text-white p-2.5 rounded-full transition-colors shadow-sm">
                             <span className="font-bold text-lg leading-none">+</span>
                         </Link>
                     </div>
                 )}
                 
-                <div className="flex-1 overflow-y-auto py-2 space-y-1" style={{ scrollbarWidth: 'none' }}>
+                <div className="flex-1 overflow-y-auto py-2 space-y-1 relative z-10" style={{ scrollbarWidth: 'none' }}>
                     <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
                     <NavItem href="/peta" icon={MapIcon} label="Peta Perusahaan" />
                     
@@ -154,7 +167,7 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
                         <SubItem href="/demografi" label="Demografi" />
                         <SubItem href="/masa-kerja" label="Masa Kerja" />
                         <SubItem href="/pensiun" label="Risiko Pensiun" />
-                        <SubItem href="/pelatihan" label="Pelatihan" />
+                        <SubItem href="/pelatihan" label="Pelatihan" exact={true} />
                         <SubItem href="/pelatihan/data" label="Data Training Mentah" />
                         <SubItem href="/analisis-gabungan" label="Analisis Gabungan" />
                     </NavGroup>
@@ -169,8 +182,8 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
                     </NavGroup>
                 </div>
 
-                <div className="p-3 border-t border-gray-100 shrink-0 bg-white">
-                    <Link href="/logout" method="post" as="button" className={`flex items-center gap-3 w-full p-2.5 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors font-medium ${collapsed ? 'justify-center' : ''}`}>
+                <div className="p-3 border-t border-white/10 shrink-0 relative z-10">
+                    <Link href="/logout" method="post" as="button" className={`flex items-center gap-3 w-full p-2.5 rounded-full text-green-100/70 hover:text-white hover:bg-red-500/20 transition-colors font-medium ${collapsed ? 'justify-center' : ''}`}>
                         <LogOut size={18} className={collapsed ? '' : 'ml-1'} />
                         {!collapsed && <span className="text-[13px]">Keluar Aplikasi</span>}
                     </Link>
@@ -180,7 +193,7 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
                 {/* Header */}
-                <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 lg:px-8 shrink-0 shadow-sm relative z-10">
+                <header className="h-16 bg-white border-b-[3px] border-amber-500 flex items-center justify-between px-6 lg:px-8 shrink-0 shadow-sm relative z-10">
                     <div className="flex items-center gap-4">
                         {collapsed && (
                             <button onClick={() => setCollapsed(false)} className="lg:hidden text-gray-500 p-2 hover:bg-gray-100 rounded-md">
@@ -245,8 +258,10 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
                 </header>
 
                 {/* Page Content */}
-                <main className={`flex-1 ${fullHeight ? 'relative overflow-hidden' : 'p-6 lg:p-8 overflow-auto'}`}>
-                    {children}
+                <main className={`flex-1 ${fullHeight ? 'relative overflow-hidden' : 'p-5 lg:p-6 overflow-auto'}`}>
+                    <div className={fullHeight ? 'w-full h-full' : 'max-w-7xl mx-auto'}>
+                        {children}
+                    </div>
                 </main>
             </div>
         </div>

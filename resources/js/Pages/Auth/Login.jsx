@@ -1,5 +1,4 @@
 import { useForm, Head } from '@inertiajs/react';
-import { Leaf } from 'lucide-react';
 
 export default function Login() {
     const { data, setData, post, processing, errors } = useForm({

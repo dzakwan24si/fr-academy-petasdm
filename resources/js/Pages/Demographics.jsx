@@ -11,6 +11,8 @@ import { StackedBar } from '@/Components/charts/StackedBar';
 import { DonutChart } from '@/Components/charts/DonutChart';
 import { formatNumber } from '@/lib/format';
 import { defaultPalette } from '@/lib/colors';
+import { useCopyAsImage } from '@/hooks/useCopyAsImage';
+import { CopyButton } from '@/Components/ui/CopyButton';
 
 export default function Demographics({ metrics }) {
     const hasData = metrics && metrics.total_hc > 0;
@@ -116,6 +118,20 @@ export default function Demographics({ metrics }) {
         return row;
     }) : [];
 
+    const { ref: top10Ref, isCopying: top10Copying, status: top10Status, handleCopy: handleTop10Copy } = useCopyAsImage({ 
+        title: 'Top 10 Jabatan (HC)',
+        onBeforeCapture: (el) => {
+            el.style.height = 'max-content';
+            const scroller = el.querySelector('.overflow-y-auto');
+            if(scroller) scroller.style.overflow = 'visible';
+        },
+        onAfterCapture: (el) => {
+            el.style.height = '';
+            const scroller = el.querySelector('.overflow-y-auto');
+            if(scroller) scroller.style.overflow = '';
+        }
+    });
+
     return (
         <AppLayout title="Demografi & Headcount">
             <Head title="Demografi & Headcount" />
@@ -185,8 +201,9 @@ export default function Demographics({ metrics }) {
 
                         {/* Section 6: Top Titles, Employment, Birth Place */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col h-80">
-                                <h3 className="font-bold text-gray-800 mb-4">Top 10 Jabatan (HC)</h3>
+                            <div ref={top10Ref} className="bg-white rounded-2xl p-4 shadow-[0_4px_20px_rgba(6,78,59,0.08)] border-0 flex flex-col h-80 relative transition-all duration-300 [@media(hover:hover)]:hover:shadow-[0_8px_30px_rgba(6,78,59,0.12)] [@media(hover:hover)]:hover:-translate-y-1">
+                                <CopyButton handleCopy={handleTop10Copy} status={top10Status} isCopying={top10Copying} />
+                                <h3 className="font-bold text-gray-800 pb-3 mb-4 pr-12 border-b border-gray-100/60">Top 10 Jabatan (HC)</h3>
                                 <div className="space-y-3 overflow-y-auto pr-2">
                                     {topJobTitles.map((jt, idx) => (
                                         <div key={idx} className="flex justify-between items-center text-sm border-b pb-2 last:border-0">
