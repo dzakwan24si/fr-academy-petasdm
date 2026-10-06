@@ -4,9 +4,11 @@ namespace App\Services\Import;
 
 use App\Imports\GenericImport;
 use App\Models\ImportBatch;
+use App\Services\AuditLogger;
 use App\Services\Portal\PortalTrainingClient;
 use App\Support\Clean;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use RuntimeException;
@@ -62,68 +64,134 @@ class TrainingImporter
         return $batch;
     }
 
-    public function importFromPortal(?int $userId = null, bool $dryRun = false, ?PortalTrainingClient $client = null): ImportBatch
-    {
-        $client = $client ?? app(PortalTrainingClient::class);
+    public function importFromPortal(
+        ?int $userId = null,
+        bool $dryRun = false,
+        bool $scheduled = false,
+        ?PortalTrainingClient $client = null
+    ): ImportBatch {
+        $lock = Cache::lock('portal-sync', 600);
 
-        // Fetch all rows from API before touching database
-        $apiRows = $client->fetchAll();
-        $mappedRows = array_map(fn ($row) => $client->mapRow($row), $apiRows);
+        if (! $lock->get()) {
+            if ($scheduled) {
+                $batch = ImportBatch::create([
+                    'user_id' => null,
+                    'type' => 'training',
+                    'filename' => 'Portal API (terjadwal)',
+                    'status' => 'failed',
+                    'started_at' => now(),
+                    'finished_at' => now(),
+                    'warnings' => ['error' => 'Sinkronisasi sedang berjalan.'],
+                ]);
+                AuditLogger::log(null, 'import.portal_sync_scheduled', null, null, ['status' => 'failed', 'reason' => 'lock_acquired']);
 
-        $report = new ImportReport;
+                return $batch;
+            }
 
-        if ($dryRun) {
-            $this->loadLookups();
-            $this->processMappedRows($mappedRows, $report, true);
-
-            return new ImportBatch([
-                'user_id' => $userId,
-                'type' => 'training',
-                'filename' => 'Portal API (dry-run)',
-                'status' => 'completed',
-                'rows_total' => $report->totalRows,
-                'rows_imported' => $report->importedRows,
-                'rows_skipped' => $report->skippedRows,
-                'warnings' => $report->warnings,
-                'started_at' => now(),
-                'finished_at' => now(),
-            ]);
+            throw new RuntimeException('Sinkronisasi sedang berjalan.');
         }
-
-        $batch = ImportBatch::create([
-            'user_id' => $userId,
-            'type' => 'training',
-            'filename' => 'Portal API (training-records/export)',
-            'status' => 'running',
-            'started_at' => now(),
-        ]);
 
         try {
-            DB::transaction(function () use ($mappedRows, $report) {
-                DB::table('training_records')->delete();
+            $client = $client ?? app(PortalTrainingClient::class);
 
-                $this->loadLookups();
-                $this->processMappedRows($mappedRows, $report, false);
-            });
+            $filename = $scheduled
+                ? 'Portal API (terjadwal)'
+                : ($dryRun ? 'Portal API (dry-run)' : 'Portal API (training-records/export)');
+            $batchUserId = $scheduled ? null : $userId;
 
-            $batch->update([
-                'rows_total' => $report->totalRows,
-                'rows_imported' => $report->importedRows,
-                'rows_skipped' => $report->skippedRows,
-                'warnings' => $report->warnings,
-                'finished_at' => now(),
-                'status' => 'completed',
-            ]);
-        } catch (Throwable $e) {
-            $batch->update([
-                'status' => 'failed',
-                'finished_at' => now(),
-                'warnings' => ['error' => $e->getMessage()],
-            ]);
-            throw $e;
+            $batch = null;
+            if (! $dryRun) {
+                $batch = ImportBatch::create([
+                    'user_id' => $batchUserId,
+                    'type' => 'training',
+                    'filename' => $filename,
+                    'status' => 'running',
+                    'started_at' => now(),
+                ]);
+            }
+
+            try {
+                // Fetch all rows from API before touching database
+                $apiRows = $client->fetchAll();
+                $mappedRows = array_map(fn ($row) => $client->mapRow($row), $apiRows);
+
+                // Guard penurunan drastis khusus mode terjadwal
+                if ($scheduled) {
+                    $currentLocalCount = DB::table('training_records')->count();
+                    $minRatio = (float) config('services.portal.sync_min_ratio', 0.8);
+                    $fetchedCount = count($mappedRows);
+
+                    if ($currentLocalCount > 0 && $fetchedCount < ($currentLocalCount * $minRatio)) {
+                        throw new RuntimeException("Jumlah data portal turun drastis ({$fetchedCount} dari {$currentLocalCount}).");
+                    }
+                }
+
+                $report = new ImportReport;
+
+                if ($dryRun) {
+                    $this->loadLookups();
+                    $this->processMappedRows($mappedRows, $report, true);
+
+                    return new ImportBatch([
+                        'user_id' => $userId,
+                        'type' => 'training',
+                        'filename' => 'Portal API (dry-run)',
+                        'status' => 'completed',
+                        'rows_total' => $report->totalRows,
+                        'rows_imported' => $report->importedRows,
+                        'rows_skipped' => $report->skippedRows,
+                        'warnings' => $report->warnings,
+                        'started_at' => now(),
+                        'finished_at' => now(),
+                    ]);
+                }
+
+                DB::transaction(function () use ($mappedRows, $report) {
+                    DB::table('training_records')->delete();
+
+                    $this->loadLookups();
+                    $this->processMappedRows($mappedRows, $report, false);
+                });
+
+                $batch->update([
+                    'rows_total' => $report->totalRows,
+                    'rows_imported' => $report->importedRows,
+                    'rows_skipped' => $report->skippedRows,
+                    'warnings' => $report->warnings,
+                    'finished_at' => now(),
+                    'status' => 'completed',
+                ]);
+
+                if ($scheduled) {
+                    AuditLogger::log(null, 'import.portal_sync_scheduled', null, null, [
+                        'status' => 'completed',
+                        'rows_total' => $report->totalRows,
+                        'rows_imported' => $report->importedRows,
+                    ]);
+                }
+            } catch (Throwable $e) {
+                if ($batch) {
+                    $batch->update([
+                        'status' => 'failed',
+                        'finished_at' => now(),
+                        'warnings' => ['error' => $e->getMessage()],
+                    ]);
+                }
+
+                if ($scheduled) {
+                    AuditLogger::log(null, 'import.portal_sync_scheduled', null, null, [
+                        'status' => 'failed',
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
+                throw $e;
+            }
+
+            return $batch;
+        } finally {
+            $lock->release();
         }
-
-        return $batch;
     }
 
     private function loadLookups(): void

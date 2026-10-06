@@ -17,7 +17,12 @@ class ImportController extends Controller
 
         return Inertia::render('Admin/Import', [
             'batches' => $batches,
+            'portalSyncConfig' => [
+                'enabled' => (bool) config('services.portal.sync_enabled'),
+                'time' => config('services.portal.sync_time', '02:00'),
+            ],
         ]);
+
     }
 
     public function store(Request $request, EmployeeImporter $empImporter, TrainingImporter $trainImporter)

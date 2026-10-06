@@ -39,6 +39,9 @@ return [
         'url' => env('PORTAL_API_URL'),
         'token' => env('PORTAL_API_TOKEN'),
         'timeout' => (int) env('PORTAL_API_TIMEOUT', 30),
+        'sync_enabled' => (bool) env('PORTAL_SYNC_ENABLED', false),
+        'sync_time' => env('PORTAL_SYNC_TIME', '02:00'),
+        'sync_min_ratio' => (float) env('PORTAL_SYNC_MIN_RATIO', 0.8),
     ],
 
 ];

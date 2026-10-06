@@ -3,7 +3,7 @@ import { useForm, usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 
 export default function Import() {
-    const { batches } = usePage().props;
+    const { batches, portalSyncConfig } = usePage().props;
     const { data, setData, post, processing, errors, reset } = useForm({
         type: 'employee',
         file: null,
@@ -42,28 +42,71 @@ export default function Import() {
         return Object.values(w).reduce((acc, curr) => acc + (curr?.count || 0), 0);
     };
 
+    const getBatchErrorReason = (batch) => {
+        if (!batch || !batch.warnings) return null;
+        const w = typeof batch.warnings === 'string' ? JSON.parse(batch.warnings) : batch.warnings;
+        return w?.error || null;
+    };
+
+    const isScheduledBatch = (batch) => batch?.filename?.includes('terjadwal');
+    const isDryRunBatch = (batch) => batch?.filename?.includes('dry-run');
+
     return (
         <AppLayout title="Import Data">
             <h1 className="text-2xl font-bold mb-6 text-gray-800">Import &amp; Sinkronisasi Data</h1>
+
+            {/* Banner Peringatan Merah jika sync portal terakhir gagal */}
+            {lastPortalBatch && lastPortalBatch.status === 'failed' && (
+                <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl text-red-900 shadow-sm flex items-start space-x-3">
+                    <svg className="w-6 h-6 text-red-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div className="flex-1 text-sm">
+                        <div className="font-bold text-red-950 flex flex-col sm:flex-row sm:items-center justify-between">
+                            <span>PERINGATAN: Sinkronisasi Portal Terakhir Gagal</span>
+                            <span className="text-xs font-normal text-red-700 mt-1 sm:mt-0">
+                                {new Date(lastPortalBatch.started_at).toLocaleString('id-ID')}
+                            </span>
+                        </div>
+                        <p className="mt-1 text-red-800 font-medium">
+                            Alasan: {getBatchErrorReason(lastPortalBatch) || 'Gagal terhubung ke Portal API atau kuota gagal.'}
+                        </p>
+                        <p className="mt-0.5 text-xs text-red-700">
+                            Data lokal tidak tersentuh dan tetap menggunakan versi valid sebelumnya. Silakan periksa koneksi portal atau jalankan sync manual.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Card 1: Sinkronisasi dari Portal API */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-between">
                     <div>
-                        <div className="flex items-center space-x-3 mb-3">
-                            <div className="p-2.5 bg-amber-100 text-amber-700 rounded-lg">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center space-x-3">
+                                <div className="p-2.5 bg-amber-100 text-amber-700 rounded-lg">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-semibold text-gray-900">Sinkronisasi dari Portal</h2>
+                                    <p className="text-xs text-gray-500">Tarik data training otomatis dari Portal FR Academy</p>
+                                </div>
                             </div>
-                            <div>
-                                <h2 className="text-lg font-semibold text-gray-900">Sinkronisasi dari Portal</h2>
-                                <p className="text-xs text-gray-500">Tarik data training otomatis dari Portal FR Academy</p>
+                            <div className="text-right">
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                                    portalSyncConfig?.enabled
+                                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                        : 'bg-gray-100 text-gray-600 border border-gray-200'
+                                }`}>
+                                    Jadwal: {portalSyncConfig?.enabled ? `Aktif (${portalSyncConfig?.time || '02:00'} WIB)` : 'Nonaktif'}
+                                </span>
                             </div>
                         </div>
 
                         <p className="text-sm text-gray-600 mb-4">
-                            Fitur ini akan mengambil snapshot data pelatihan terbaru langsung dari portal resmi FR Academy dan memprosesnya melalui aturan pembersihan standar.
+                            Fitur ini mengambil snapshot data pelatihan terbaru langsung dari portal resmi FR Academy dan memprosesnya melalui aturan pembersihan standar.
                         </p>
 
                         {syncErrors.portal && (
@@ -85,6 +128,11 @@ export default function Import() {
                                 </div>
                                 <div className="text-slate-600">
                                     Waktu: <span className="font-medium text-slate-800">{new Date(lastPortalBatch.started_at).toLocaleString('id-ID')}</span>
+                                </div>
+                                <div className="text-slate-600">
+                                    Sumber: <span className="font-medium text-slate-800">
+                                        {isScheduledBatch(lastPortalBatch) ? 'Terjadwal (Otomatis Malam)' : (isDryRunBatch(lastPortalBatch) ? 'Simulasi (Dry Run)' : 'Manual')}
+                                    </span>
                                 </div>
                                 <div className="text-slate-600">
                                     Baris: <span className="font-medium text-slate-800">{lastPortalBatch.rows_total} Total</span> | <span className="text-emerald-700 font-medium">{lastPortalBatch.rows_imported} Diimpor</span> | <span className="text-amber-700 font-medium">{lastPortalBatch.rows_skipped} Dilewati</span>
