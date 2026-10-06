@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search } from 'lucide-react';
 import { StaffDetailModal } from './StaffDetailModal';
+import EmployeeAvatar from '@/Components/EmployeeAvatar';
 
 export function StaffList({ company, location }) {
     const [employees, setEmployees] = useState(null);
@@ -52,11 +53,9 @@ export function StaffList({ company, location }) {
                             <button 
                                 key={emp.employee_id}
                                 onClick={() => setSelectedEmp(emp.employee_id)}
-                                className="w-full text-left p-3 border rounded-lg hover:border-corporate-light hover:bg-gray-50 flex items-center gap-3"
+                                className="w-full text-left p-3 border rounded-lg hover:border-corporate-light hover:bg-gray-50 flex items-center gap-3 transition-colors"
                             >
-                                <div className="w-10 h-10 rounded-full bg-corporate-light text-white flex items-center justify-center font-bold">
-                                    {emp.name.charAt(0)}
-                                </div>
+                                <EmployeeAvatar name={emp.name} photoUrl={emp.photo_url} size="md" />
                                 <div className="flex-1 min-w-0">
                                     <div className="font-bold text-gray-900 truncate">{emp.name}</div>
                                     <div className="text-sm text-gray-500 truncate">{emp.job_title_name}</div>
@@ -64,6 +63,7 @@ export function StaffList({ company, location }) {
                             </button>
                         ))}
                     </div>
+
                     <div className="flex justify-between items-center py-4 border-t">
                         <button 
                             disabled={page === 1}

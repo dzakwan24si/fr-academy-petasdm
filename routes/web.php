@@ -134,6 +134,8 @@ Route::middleware('auth')->group(function () {
     // Karyawan route
     Route::get('/karyawan', [EmployeeDirectoryController::class, 'index'])->name('karyawan');
     Route::get('/karyawan/export', [EmployeeDirectoryController::class, 'export'])->name('karyawan.export');
+    Route::post('/karyawan/{employee}/photo', [EmployeeDirectoryController::class, 'uploadPhoto'])->name('karyawan.photo.upload');
+    Route::delete('/karyawan/{employee}/photo', [EmployeeDirectoryController::class, 'deletePhoto'])->name('karyawan.photo.delete');
 
     // Admin routes
     Route::get('/admin/import', [ImportController::class, 'index'])->name('admin.import');

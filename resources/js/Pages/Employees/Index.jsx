@@ -5,6 +5,8 @@ import FilterBar from '@/Components/ui/FilterBar';
 import { Search, Download, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { StaffDetailModal } from '@/Components/Map/StaffDetailModal';
 import { formatDecimal } from '@/lib/format';
+import EmployeeAvatar from '@/Components/EmployeeAvatar';
+
 
 export default function EmployeeIndex({ employees, filters }) {
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
@@ -155,8 +157,14 @@ export default function EmployeeIndex({ employees, filters }) {
                                         className="hover:bg-blue-50/50 transition-colors cursor-pointer"
                                     >
                                         <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{emp.employee_id}</td>
-                                        <td className="px-4 py-3 whitespace-nowrap">{emp.name}</td>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <div className="flex items-center space-x-3">
+                                                <EmployeeAvatar name={emp.name} photoUrl={emp.photo_url} size="sm" />
+                                                <span className="font-semibold text-gray-900">{emp.name}</span>
+                                            </div>
+                                        </td>
                                         <td className="px-4 py-3 whitespace-nowrap">{emp.company_name}</td>
+
                                         <td className="px-4 py-3 whitespace-nowrap">{emp.location_name}</td>
                                         <td className="px-4 py-3 whitespace-nowrap">{emp.department}</td>
                                         <td className="px-4 py-3 whitespace-nowrap">{emp.job_title}</td>

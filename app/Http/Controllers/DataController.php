@@ -8,6 +8,7 @@ use App\Models\Location;
 use App\Services\AuditLogger;
 use App\Support\Demographics;
 use App\Support\EmployeeFilter;
+use App\Support\TrainingFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -191,7 +192,9 @@ class DataController extends Controller
                 'job_level_code' => $e->job_level_code,
                 'age' => Demographics::ageFullYears(Carbon::parse($e->birth_date)),
                 'los' => Demographics::losFullYears(Carbon::parse($e->join_date)),
+                'photo_url' => $e->photo_url,
             ];
+
         });
 
         return response()->json($employees);
@@ -233,7 +236,9 @@ class DataController extends Controller
                 'location' => $location->name ?? '-',
                 'group' => $employee->group,
                 'region' => $employee->region,
+                'photo_url' => $employee->photo_url,
             ],
+
             'pribadi' => [
                 'gender' => $employee->gender,
                 'birth_place' => $employee->birth_place,
@@ -264,7 +269,7 @@ class DataController extends Controller
         ]);
     }
 
-    public function trainings(Request $request, \App\Support\TrainingFilter $filter)
+    public function trainings(Request $request, TrainingFilter $filter)
     {
         $query = DB::table('training_records');
         $query = $filter->apply($query, $request);
@@ -273,7 +278,7 @@ class DataController extends Controller
             $s = $request->input('search');
             $query->where('training_name', 'like', "%{$s}%");
         }
-        
+
         $events = $query->select(
             'training_name',
             'month',
@@ -282,11 +287,11 @@ class DataController extends Controller
             DB::raw('COUNT(DISTINCT employee_id) as participants'),
             DB::raw('SUM(hours) as total_hours')
         )
-        ->groupBy('training_name', 'month', 'year', 'source_type');
+            ->groupBy('training_name', 'month', 'year', 'source_type');
 
         $sortField = $request->input('sort', 'year');
         $sortDir = $request->input('direction', 'desc');
-        
+
         $validSorts = ['training_name', 'month', 'year', 'participants', 'total_hours', 'source_type'];
         if (in_array($sortField, $validSorts)) {
             if ($sortField === 'year' || $sortField === 'month') {
@@ -297,7 +302,7 @@ class DataController extends Controller
         }
 
         $paginated = $events->paginate(15);
-        
+
         return response()->json($paginated);
     }
 }
