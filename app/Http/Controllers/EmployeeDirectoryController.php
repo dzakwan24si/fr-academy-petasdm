@@ -110,6 +110,7 @@ class EmployeeDirectoryController extends Controller
         // Log to AuditLogger
         \App\Services\AuditLogger::log(auth()->id() ?? 1, 'EXPORT_EMPLOYEES', null, null, ['count' => $count]);
 
-        return Excel::download(new EmployeesExport($query), 'direktori_karyawan_' . date('Ymd_His') . '.xlsx');
+        return Excel::download(new EmployeesExport($query), 'direktori_karyawan_' . now()->format('Ymd_His') . '.xlsx');
     }
 }
+

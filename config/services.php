@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'portal' => [
+        'url' => env('PORTAL_API_URL'),
+        'token' => env('PORTAL_API_TOKEN'),
+        'timeout' => (int) env('PORTAL_API_TIMEOUT', 30),
+    ],
+
 ];

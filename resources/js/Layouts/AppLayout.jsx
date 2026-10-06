@@ -192,7 +192,7 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
                 {/* Header */}
-                <header className="h-16 bg-white border-b-[3px] border-amber-500 flex items-center justify-between px-6 lg:px-8 shrink-0 shadow-sm relative z-10">
+                <header className="h-16 bg-white border-b-[3px] border-amber-500 flex items-center justify-between px-6 lg:px-8 shrink-0 shadow-sm relative z-50">
                     <div className="flex items-center gap-4">
                         {collapsed && (
                             <button onClick={() => setCollapsed(false)} className="lg:hidden text-gray-500 p-2 hover:bg-gray-100 rounded-md">

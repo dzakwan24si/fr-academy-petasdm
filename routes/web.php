@@ -1,5 +1,24 @@
 <?php
 
+use App\Http\Controllers\DataController;
+use App\Http\Controllers\DataQualityController;
+use App\Http\Controllers\EmployeeDirectoryController;
+use App\Http\Controllers\FilterOptionsController;
+use App\Http\Controllers\ImportController;
+use App\Http\Controllers\LocationController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TrainingRecordController;
+use App\Services\CombinedMetrics;
+use App\Services\InsightBuilder;
+use App\Services\RetirementMetrics;
+use App\Services\TenureMetrics;
+use App\Services\TrainingMetrics;
+use App\Services\WorkforceMetrics;
+use App\Support\EmployeeFilter;
+use App\Support\TrainingFilter;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -13,14 +32,15 @@ Route::middleware('guest')->group(function () {
         return Inertia::render('Auth/Login');
     })->name('login');
 
-    Route::post('/login', function (\Illuminate\Http\Request $request) {
+    Route::post('/login', function (Request $request) {
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
-        if (\Illuminate\Support\Facades\Auth::attempt($credentials)) {
+        if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
+
             return redirect()->intended('dashboard');
         }
 
@@ -31,28 +51,30 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::post('/logout', function (\Illuminate\Http\Request $request) {
-        \Illuminate\Support\Facades\Auth::logout();
+    Route::post('/logout', function (Request $request) {
+        Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect('/login');
     })->name('logout');
 
-    Route::get('/pengaturan', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/pengaturan/profil', [\App\Http\Controllers\ProfileController::class, 'updateProfile'])->name('profile.update');
-    Route::put('/pengaturan/password', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::get('/pengaturan', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/pengaturan/profil', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::put('/pengaturan/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
-    Route::get('/dashboard', function (\Illuminate\Http\Request $request, \App\Support\EmployeeFilter $filter) {
-        $asOf = $request->input('as_of') ? \Carbon\Carbon::parse($request->input('as_of')) : \Carbon\Carbon::now();
-        $metricsService = new \App\Services\WorkforceMetrics($asOf);
-        
+    Route::get('/dashboard', function (Request $request, EmployeeFilter $filter) {
+        $asOf = $request->input('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::now();
+        $metricsService = new WorkforceMetrics($asOf);
+
         return Inertia::render('Dashboard', [
             'metrics' => Inertia::defer(fn () => $metricsService->getMetrics($request, $filter, $request->user())),
             'insight' => Inertia::defer(function () use ($metricsService, $request, $filter) {
                 $metrics = $metricsService->getMetrics($request, $filter, $request->user());
-                return \App\Services\InsightBuilder::build($metrics['raw_totals'], $metrics['avg_age'], $metrics['raw_totals']['total_hc']);
+
+                return InsightBuilder::build($metrics['raw_totals'], $metrics['avg_age'], $metrics['raw_totals']['total_hc']);
             }),
-            'filters' => $request->all()
+            'filters' => $request->all(),
         ]);
     })->name('dashboard');
 
@@ -60,72 +82,77 @@ Route::middleware('auth')->group(function () {
         return Inertia::render('Map/Index');
     })->name('peta');
 
-    Route::get('/demografi', function (\Illuminate\Http\Request $request, \App\Support\EmployeeFilter $filter) {
-        $asOf = $request->input('as_of') ? \Carbon\Carbon::parse($request->input('as_of')) : \Carbon\Carbon::now();
-        $metricsService = new \App\Services\WorkforceMetrics($asOf);
-        
+    Route::get('/demografi', function (Request $request, EmployeeFilter $filter) {
+        $asOf = $request->input('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::now();
+        $metricsService = new WorkforceMetrics($asOf);
+
         return Inertia::render('Demographics', [
             'metrics' => Inertia::defer(fn () => $metricsService->getMetrics($request, $filter, $request->user())),
-            'filters' => $request->all()
+            'filters' => $request->all(),
         ]);
     })->name('demografi');
 
-    Route::get('/masa-kerja', function (\Illuminate\Http\Request $request, \App\Support\EmployeeFilter $filter) {
-        $metricsService = new \App\Services\TenureMetrics();
+    Route::get('/masa-kerja', function (Request $request, EmployeeFilter $filter) {
+        $metricsService = new TenureMetrics;
+
         return Inertia::render('Tenure', [
             'metrics' => Inertia::defer(fn () => $metricsService->getMetrics($request, $filter)),
-            'filters' => $request->all()
+            'filters' => $request->all(),
         ]);
     })->name('masa-kerja');
 
-    Route::get('/pensiun', function (\Illuminate\Http\Request $request, \App\Support\EmployeeFilter $filter) {
-        $metricsService = new \App\Services\RetirementMetrics();
+    Route::get('/pensiun', function (Request $request, EmployeeFilter $filter) {
+        $metricsService = new RetirementMetrics;
+
         return Inertia::render('Retirement', [
             'metrics' => Inertia::defer(fn () => $metricsService->getMetrics($request, $filter)),
-            'filters' => $request->all()
+            'filters' => $request->all(),
         ]);
     })->name('pensiun');
 
-    Route::get('/pelatihan', function (\Illuminate\Http\Request $request, \App\Support\TrainingFilter $filter) {
-        $metricsService = new \App\Services\TrainingMetrics();
+    Route::get('/pelatihan', function (Request $request, TrainingFilter $filter) {
+        $metricsService = new TrainingMetrics;
+
         return Inertia::render('Training', [
             'metrics' => Inertia::defer(fn () => $metricsService->getMetrics($request, $filter, $request->user())),
-            'filters' => $request->all()
+            'filters' => $request->all(),
         ]);
     })->name('pelatihan');
 
-    Route::get('/pelatihan/data', [\App\Http\Controllers\TrainingRecordController::class, 'index'])->name('pelatihan.data');
-    Route::get('/pelatihan/data/export', [\App\Http\Controllers\TrainingRecordController::class, 'export'])->name('pelatihan.data.export');
+    Route::get('/pelatihan/data', [TrainingRecordController::class, 'index'])->name('pelatihan.data');
+    Route::get('/pelatihan/data/export', [TrainingRecordController::class, 'export'])->name('pelatihan.data.export');
 
-    Route::get('/analisis-gabungan', function (\Illuminate\Http\Request $request, \App\Support\EmployeeFilter $filter) {
-        $metricsService = new \App\Services\CombinedMetrics();
+    Route::get('/analisis-gabungan', function (Request $request, EmployeeFilter $filter) {
+        $metricsService = new CombinedMetrics;
+
         return Inertia::render('Combined', [
             'metrics' => Inertia::defer(fn () => $metricsService->getMetrics($request, $filter)),
-            'filters' => $request->all()
+            'filters' => $request->all(),
         ]);
     })->name('analisis-gabungan');
 
     // Karyawan route
-    Route::get('/karyawan', [\App\Http\Controllers\EmployeeDirectoryController::class, 'index'])->name('karyawan');
-    Route::get('/karyawan/export', [\App\Http\Controllers\EmployeeDirectoryController::class, 'export'])->name('karyawan.export');
+    Route::get('/karyawan', [EmployeeDirectoryController::class, 'index'])->name('karyawan');
+    Route::get('/karyawan/export', [EmployeeDirectoryController::class, 'export'])->name('karyawan.export');
 
     // Admin routes
-    Route::get('/admin/import', [\App\Http\Controllers\ImportController::class, 'index'])->name('admin.import');
-    Route::post('/admin/import', [\App\Http\Controllers\ImportController::class, 'store'])->name('admin.import.store');
-    
-    Route::get('/admin/kualitas-data', [\App\Http\Controllers\DataQualityController::class, 'index'])->name('admin.kualitas');
-    Route::get('/admin/lokasi', [\App\Http\Controllers\LocationController::class, 'index'])->name('admin.lokasi');
-    Route::post('/admin/lokasi/{location}', [\App\Http\Controllers\LocationController::class, 'update'])->name('admin.lokasi.update');
-    Route::post('/admin/lokasi-import', [\App\Http\Controllers\LocationController::class, 'import'])->name('admin.lokasi.import');
+    Route::get('/admin/import', [ImportController::class, 'index'])->name('admin.import');
+    Route::post('/admin/import', [ImportController::class, 'store'])->name('admin.import.store');
+    Route::post('/admin/import/portal-sync', [ImportController::class, 'syncPortal'])->middleware('throttle:3,1')->name('admin.import.portal-sync');
+
+    Route::get('/admin/kualitas-data', [DataQualityController::class, 'index'])->name('admin.kualitas');
+    Route::get('/admin/lokasi', [LocationController::class, 'index'])->name('admin.lokasi');
+    Route::post('/admin/lokasi/{location}', [LocationController::class, 'update'])->name('admin.lokasi.update');
+    Route::post('/admin/lokasi-import', [LocationController::class, 'import'])->name('admin.lokasi.import');
 
     // Endpoint JSON
     Route::prefix('data')->name('data.')->group(function () {
-        Route::get('/map/locations', [\App\Http\Controllers\DataController::class, 'locations'])->name('locations');
-        Route::get('/companies', [\App\Http\Controllers\DataController::class, 'companies'])->name('companies');
-        Route::get('/companies/{company}/profile', [\App\Http\Controllers\DataController::class, 'companyProfile'])->name('companies.profile');
-        Route::get('/companies/{company}/employees', [\App\Http\Controllers\DataController::class, 'companyEmployees'])->name('companies.employees');
-        Route::get('/employees/{employee}', [\App\Http\Controllers\DataController::class, 'employeeDetail'])->name('employees.detail');
-        Route::get('/trainings', [\App\Http\Controllers\DataController::class, 'trainings'])->name('trainings');
-        Route::get('/filter-options', [\App\Http\Controllers\FilterOptionsController::class, 'index'])->name('filter-options');
+        Route::get('/map/locations', [DataController::class, 'locations'])->name('locations');
+        Route::get('/companies', [DataController::class, 'companies'])->name('companies');
+        Route::get('/companies/{company}/profile', [DataController::class, 'companyProfile'])->name('companies.profile');
+        Route::get('/companies/{company}/employees', [DataController::class, 'companyEmployees'])->name('companies.employees');
+        Route::get('/employees/{employee}', [DataController::class, 'employeeDetail'])->name('employees.detail');
+        Route::get('/trainings', [DataController::class, 'trainings'])->name('trainings');
+        Route::get('/filter-options', [FilterOptionsController::class, 'index'])->name('filter-options');
     });
 });
