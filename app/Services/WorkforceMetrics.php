@@ -2,12 +2,18 @@
 
 namespace App\Services;
 
+use App\Models\Company;
 use App\Models\Employee;
 use App\Models\ImportBatch;
+use App\Models\Location;
+use App\Models\User;
 use App\Support\Demographics;
 use App\Support\EmployeeFilter;
+use App\Support\MetricsHelper;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class WorkforceMetrics
 {
@@ -18,14 +24,14 @@ class WorkforceMetrics
         $this->asOf = $asOf ?? Carbon::now();
     }
 
-    public function getMetrics(\Illuminate\Http\Request $request, EmployeeFilter $filter, \App\Models\User $user)
+    public function getMetrics(Request $request, EmployeeFilter $filter, User $user)
     {
         // Cache key based on filter hash and latest import batch
         $latestBatch = ImportBatch::latest('id')->first();
         $batchId = $latestBatch ? $latestBatch->id : 0;
-        
+
         $asOfStr = $this->asOf->format('Y-m-d');
-        $filterHash = md5(json_encode($request->all()) . '_' . $user->id . '_' . $asOfStr);
+        $filterHash = md5(json_encode($request->all()).'_'.$user->id.'_'.$asOfStr);
         $cacheKey = "metrics_{$batchId}_{$filterHash}";
 
         return Cache::remember($cacheKey, 3600, function () use ($request, $filter, $user) {
@@ -33,16 +39,16 @@ class WorkforceMetrics
         });
     }
 
-    protected function calculate(\Illuminate\Http\Request $request, EmployeeFilter $filter, \App\Models\User $user)
+    protected function calculate(Request $request, EmployeeFilter $filter, User $user)
     {
         $query = Employee::query();
         $query = $filter->apply($query, $request);
-        
+
         // Single narrow query
         $employees = $query->get([
-            'id', 'employee_id', 'company_id', 'location_id', 'region', 'gender', 
+            'id', 'employee_id', 'company_id', 'location_id', 'region', 'gender',
             'birth_date', 'join_date', 'employment_type', 'job_level_code',
-            'group', 'organization_name', 'marital_status', 'ptkp_code', 'job_title_name', 'birth_place'
+            'group', 'organization_name', 'marital_status', 'ptkp_code', 'job_title_name', 'birth_place',
         ]);
 
         $totalHc = $employees->count();
@@ -55,14 +61,14 @@ class WorkforceMetrics
         $pensiun = 0;
         $ages = [];
         $loses = [];
-        
+
         $generations = [];
         $generationsByLevel = [];
         $hcByRegion = [];
         $hcByCompany = [];
         $hcByRegionFacility = [];
         $retireRiskByLevel = [];
-        
+
         $hcByGroup = [];
         $hcByDept = [];
         $agesByDept = [];
@@ -75,40 +81,47 @@ class WorkforceMetrics
         $jobTitles = [];
         $employmentByRegion = [];
         $birthPlaces = [];
-        
+
         $hcByLevel = [];
-        
-        $locations = \App\Models\Location::pluck('name', 'id');
-        
+        $titlesByLevel = [];
+
+        $locations = Location::pluck('name', 'id');
+
         $employeeIds = [];
         foreach ($employees as $e) {
             $employeeIds[] = $e->id;
-            if ($e->gender === 'Female') $females++;
-            if ($e->employment_type === 'PERM') $perm++;
-            
+            if ($e->gender === 'Female') {
+                $females++;
+            }
+            if ($e->employment_type === 'PERM') {
+                $perm++;
+            }
+
             $birthDate = $e->birth_date ? Carbon::parse($e->birth_date) : null;
             $joinDate = $e->join_date ? Carbon::parse($e->join_date) : null;
-            
+
             if ($birthDate) {
                 $ageDec = Demographics::age($birthDate, $this->asOf);
                 $ages[] = $ageDec;
-                
+
                 $ageFull = Demographics::ageFullYears($birthDate, $this->asOf);
                 if ($ageFull >= config('sdm.retirement_age', 55)) {
                     $pensiun++;
                     $lvl = $e->job_level_code ?? 'Unknown';
                     $retireRiskByLevel[$lvl] = ($retireRiskByLevel[$lvl] ?? 0) + 1;
                 }
-                
+
                 $gen = Demographics::generation($birthDate->year);
                 $generations[$gen] = ($generations[$gen] ?? 0) + 1;
-                
+
                 $lvl = $e->job_level_code ?? 'Unknown';
-                if (!isset($generationsByLevel[$lvl])) $generationsByLevel[$lvl] = [];
+                if (! isset($generationsByLevel[$lvl])) {
+                    $generationsByLevel[$lvl] = [];
+                }
                 $generationsByLevel[$lvl][$gen] = ($generationsByLevel[$lvl][$gen] ?? 0) + 1;
 
                 // Demographics additions
-                $ageBin = match(true) {
+                $ageBin = match (true) {
                     $ageFull < 25 => '<25',
                     $ageFull < 30 => '25-29',
                     $ageFull < 35 => '30-34',
@@ -119,69 +132,86 @@ class WorkforceMetrics
                     default => '55+'
                 };
                 $ageDistribution[$ageBin]++;
-                
-                if (!isset($populationPyramid[$ageBin])) $populationPyramid[$ageBin] = ['Male' => 0, 'Female' => 0];
+
+                if (! isset($populationPyramid[$ageBin])) {
+                    $populationPyramid[$ageBin] = ['Male' => 0, 'Female' => 0];
+                }
                 $populationPyramid[$ageBin][$e->gender ?? 'Male']++;
-                
+
                 $region = $e->region ?? 'Unknown';
-                if (!isset($genByRegion[$region])) $genByRegion[$region] = [];
+                if (! isset($genByRegion[$region])) {
+                    $genByRegion[$region] = [];
+                }
                 $genByRegion[$region][$gen] = ($genByRegion[$region][$gen] ?? 0) + 1;
-                
+
                 $dept = $e->organization_name ?? 'Unknown';
-                if (!isset($agesByDept[$dept])) $agesByDept[$dept] = [];
+                if (! isset($agesByDept[$dept])) {
+                    $agesByDept[$dept] = [];
+                }
                 $agesByDept[$dept][] = $ageDec;
             }
-            
+
             $lvl = $e->job_level_code ?? 'Unknown';
             $hcByLevel[$lvl] = ($hcByLevel[$lvl] ?? 0) + 1;
-            
+
             if ($joinDate) {
                 $loses[] = Demographics::los($joinDate, $this->asOf);
             }
-            
+
             $region = $e->region ?? 'Unknown';
             $hcByRegion[$region] = ($hcByRegion[$region] ?? 0) + 1;
-            
+
             $locName = $locations[$e->location_id] ?? '';
             // KLASIFIKASI FACILITY (TURUNAN)
             // Karena DB tidak memiliki kolom facility_type, kita menderivasikannya dari Location Name:
             // - HO (Head Office): Jika lokasi mengandung 'office' atau 'jakarta'
             // - Mill: Jika lokasi mengandung 'pabrik', 'mill', 'kcp', 'biodiesel', atau 'bulking'
             // - Estate: Default fallback untuk semua lokasi lainnya (kebun, dsb)
-            $facilityType = match(true) {
+            $facilityType = match (true) {
                 stripos($locName, 'office') !== false || stripos($locName, 'jakarta') !== false => 'HO',
                 stripos($locName, 'pabrik') !== false || stripos($locName, 'mill') !== false || stripos($locName, 'kcp') !== false || stripos($locName, 'biodiesel') !== false || stripos($locName, 'bulking') !== false => 'Mill',
                 default => 'Estate'
             };
-            if (!isset($hcByRegionFacility[$region])) {
+            if (! isset($hcByRegionFacility[$region])) {
                 $hcByRegionFacility[$region] = ['Estate' => 0, 'Mill' => 0, 'HO' => 0];
             }
             $hcByRegionFacility[$region][$facilityType]++;
-            
+
             $hcByCompany[$e->company_id] = ($hcByCompany[$e->company_id] ?? 0) + 1;
-            
+
             // Demographics additions
             $group = $e->group ?? 'Unknown';
             $hcByGroup[$group] = ($hcByGroup[$group] ?? 0) + 1;
-            
+
             $dept = $e->organization_name ?? 'Unknown';
             $hcByDept[$dept] = ($hcByDept[$dept] ?? 0) + 1;
-            
-            if (!isset($genderByLevel[$lvl])) $genderByLevel[$lvl] = ['Male' => 0, 'Female' => 0];
+
+            if (! isset($genderByLevel[$lvl])) {
+                $genderByLevel[$lvl] = ['Male' => 0, 'Female' => 0];
+            }
             $genderByLevel[$lvl][$e->gender ?? 'Male']++;
-            
+
             $ms = $e->marital_status ?? 'Unknown';
             $maritalStatus[$ms] = ($maritalStatus[$ms] ?? 0) + 1;
-            
+
             $pt = $e->ptkp_code ?? 'Unknown';
             $ptkp[$pt] = ($ptkp[$pt] ?? 0) + 1;
-            
+
             $jt = $e->job_title_name ?? 'Unknown';
             $jobTitles[$jt] = ($jobTitles[$jt] ?? 0) + 1;
-            
-            if (!isset($employmentByRegion[$region])) $employmentByRegion[$region] = [];
+
+            if ($lvl !== 'Unknown' && $jt !== 'Unknown') {
+                if (! isset($titlesByLevel[$lvl])) {
+                    $titlesByLevel[$lvl] = [];
+                }
+                $titlesByLevel[$lvl][$jt] = ($titlesByLevel[$lvl][$jt] ?? 0) + 1;
+            }
+
+            if (! isset($employmentByRegion[$region])) {
+                $employmentByRegion[$region] = [];
+            }
             $employmentByRegion[$region][$e->employment_type ?? 'Unknown'] = ($employmentByRegion[$region][$e->employment_type ?? 'Unknown'] ?? 0) + 1;
-            
+
             if ($e->birth_place) {
                 $bp = strtoupper(trim($e->birth_place));
                 if ($bp === '(NONE)' || $bp === 'NONE' || $bp === '') {
@@ -193,50 +223,50 @@ class WorkforceMetrics
 
         $avgAge = count($ages) > 0 ? array_sum($ages) / count($ages) : 0;
         $avgLos = count($loses) > 0 ? array_sum($loses) / count($loses) : 0;
-        
+
         // --- Training Metrics ---
         // Get training records for the filtered employees ONLY for coverage
         // Coverage uses employees in the current filter who have at least 1 training
-        $employeesWithTraining = \Illuminate\Support\Facades\DB::table('training_records')
+        $employeesWithTraining = DB::table('training_records')
             ->whereIn('employee_id', $employeeIds)
             ->distinct('employee_id')
             ->count('employee_id');
-            
+
         $trainingCoverage = $totalHc > 0 ? round(($employeesWithTraining / $totalHc) * 100, 1) : 0;
 
         // For total hours and trend, PRD 4.5 says use ALL training records (not filtered by employees)
-        $allTrainings = \Illuminate\Support\Facades\DB::table('training_records')
+        $allTrainings = DB::table('training_records')
             ->get(['hours', 'month', 'year']);
-            
+
         $totalTrainingHours = $allTrainings->sum('hours');
-        
+
         // Tren jam pelatihan per bulan (year-month) using all trainings
         $trainingTrend = [];
         foreach ($allTrainings as $t) {
             if ($t->year && $t->month) {
-                $my = $t->year . '-' . str_pad($t->month, 2, '0', STR_PAD_LEFT);
+                $my = $t->year.'-'.str_pad($t->month, 2, '0', STR_PAD_LEFT);
                 $trainingTrend[$my] = ($trainingTrend[$my] ?? 0) + $t->hours;
             }
         }
         ksort($trainingTrend);
-        
+
         // Unlinked training records (nik status tracking for coverage quality)
-        // Since we are filtering by employees, unlinked ones won't be here. 
+        // Since we are filtering by employees, unlinked ones won't be here.
         // We need all training records to report unlinked ones for the whole system, but maybe dashboard just shows total?
         // PRD 4.6 says: Selalu tampilkan dua angka berdampingan: coverage dan "Baris training yang tidak dapat dihubungkan ke karyawan"
-        $unlinkedTrainingRows = \Illuminate\Support\Facades\DB::table('training_records')
+        $unlinkedTrainingRows = DB::table('training_records')
             ->whereNull('employee_id')
             ->count();
-        $totalTrainingRows = \Illuminate\Support\Facades\DB::table('training_records')->count();
+        $totalTrainingRows = DB::table('training_records')->count();
         $unlinkedPct = $totalTrainingRows > 0 ? round(($unlinkedTrainingRows / $totalTrainingRows) * 100, 1) : 0;
-        
+
         // Get company names for hcByCompany
-        $companyNames = \App\Models\Company::whereIn('id', array_keys($hcByCompany))->pluck('name', 'id');
+        $companyNames = Company::whereIn('id', array_keys($hcByCompany))->pluck('name', 'id');
         $hcByCompanyNamed = [];
         foreach ($hcByCompany as $cid => $hc) {
             $hcByCompanyNamed[$companyNames[$cid] ?? 'Unknown'] = $hc;
         }
-        
+
         $avgAgeByDept = [];
         foreach ($agesByDept as $dept => $agArr) {
             if (count($agArr) >= 5) {
@@ -244,6 +274,11 @@ class WorkforceMetrics
             }
         }
         arsort($avgAgeByDept);
+
+        foreach ($titlesByLevel as $lvl => &$tList) {
+            arsort($tList);
+        }
+        unset($tList);
 
         return [
             'total_hc' => $totalHc,
@@ -258,6 +293,7 @@ class WorkforceMetrics
             'hc_by_region_facility' => $hcByRegionFacility,
             'hc_by_company' => $hcByCompanyNamed,
             'hc_by_level' => $hcByLevel,
+            'titles_by_level' => $titlesByLevel,
             'retire_risk_by_level' => $retireRiskByLevel,
             'hc_by_group' => $hcByGroup,
             'hc_by_dept' => $hcByDept,
@@ -277,15 +313,15 @@ class WorkforceMetrics
                 'coverage_pct' => $trainingCoverage,
                 'unlinked_rows' => $unlinkedTrainingRows,
                 'unlinked_pct' => $unlinkedPct,
-                'trend' => $trainingTrend
+                'trend' => $trainingTrend,
             ],
-            'new_hire_no_training' => \App\Support\MetricsHelper::countNewHireNoTraining($employees, $this->asOf),
-            'new_hire_this_year' => \App\Support\MetricsHelper::countNewHireThisYear($employees, $this->asOf),
+            'new_hire_no_training' => MetricsHelper::countNewHireNoTraining($employees, $this->asOf),
+            'new_hire_this_year' => MetricsHelper::countNewHireThisYear($employees, $this->asOf),
             'raw_totals' => [
                 'total_hc' => $totalHc,
                 'generations' => $generations,
                 'pensiun' => $pensiun,
-            ]
+            ],
         ];
     }
 
@@ -293,7 +329,7 @@ class WorkforceMetrics
     {
         return [
             'total_hc' => 0, 'avg_age' => 0, 'avg_los' => 0, 'female_pct' => 0, 'perm_pct' => 0, 'pensiun' => 0,
-            'generations' => [], 'generations_by_level' => [], 'hc_by_region' => [], 'hc_by_region_facility' => [], 'hc_by_company' => [], 'hc_by_level' => [], 'retire_risk_by_level' => [],
+            'generations' => [], 'generations_by_level' => [], 'hc_by_region' => [], 'hc_by_region_facility' => [], 'hc_by_company' => [], 'hc_by_level' => [], 'titles_by_level' => [], 'retire_risk_by_level' => [],
             'hc_by_group' => [], 'hc_by_dept' => [], 'age_distribution' => [], 'population_pyramid' => [], 'gen_by_region' => [],
             'avg_age_by_dept' => [], 'gender_by_level' => [], 'marital_status' => [], 'ptkp' => [], 'job_titles' => [],
             'employment_by_region' => [], 'birth_places' => [],
@@ -301,7 +337,7 @@ class WorkforceMetrics
             'training' => ['total_hours' => 0, 'coverage_pct' => 0, 'unlinked_rows' => 0, 'unlinked_pct' => 0, 'trend' => []],
             'new_hire_no_training' => 0,
             'new_hire_this_year' => 0,
-            'raw_totals' => ['total_hc' => 0, 'generations' => [], 'pensiun' => 0]
+            'raw_totals' => ['total_hc' => 0, 'generations' => [], 'pensiun' => 0],
         ];
     }
 }

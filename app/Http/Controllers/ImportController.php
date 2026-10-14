@@ -13,7 +13,7 @@ class ImportController extends Controller
 {
     public function index()
     {
-        $batches = ImportBatch::latest()->take(20)->get();
+        $batches = ImportBatch::latest()->take(50)->get();
 
         return Inertia::render('Admin/Import', [
             'batches' => $batches,

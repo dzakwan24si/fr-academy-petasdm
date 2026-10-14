@@ -3,7 +3,6 @@ import { useFilters } from '@/hooks/useFilters';
 import { MultiSelect } from './MultiSelect';
 import { Skeleton } from './Skeleton';
 import { RotateCcw, ChevronDown, ChevronUp, Filter } from 'lucide-react';
-import { levelLabels } from '@/lib/constants'; // Need to create this for Job Level labels
 
 export default function FilterBar({ isTrainingPage = false }) {
     const { filters, options, loading, updateFilter, resetFilters, getActiveCount } = useFilters(isTrainingPage);
@@ -37,7 +36,7 @@ export default function FilterBar({ isTrainingPage = false }) {
     // Map job levels to labels
     const jobLevelOptions = options.jobLevels.map(code => ({
         id: code,
-        name: levelLabels[code] ? `${code} - ${levelLabels[code]}` : code
+        name: `Level ${code}`
     }));
 
     return (

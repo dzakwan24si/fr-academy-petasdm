@@ -33,7 +33,11 @@ export default function Tenure({ metrics }) {
     
     const trendData = hasData ? Object.entries(metrics.trend[trendType]).map(([name, value]) => ({ name, value })) : [];
     
-    const avgLevelData = hasData ? Object.entries(metrics.average.level).map(([name, value]) => ({ name, value })) : [];
+    const avgLevelData = hasData ? Object.entries(metrics.average.level).map(([lvl, value]) => ({ 
+        name: `Level ${lvl}`, 
+        level: lvl,
+        value: typeof value === 'number' ? Math.round(value * 10) / 10 : value 
+    })) : [];
     
     const avgRegionData = hasData ? Object.entries(metrics.average.region).map(([name, value]) => ({ name, value })) : [];
     
@@ -81,18 +85,16 @@ export default function Tenure({ metrics }) {
                             </ChartCard>
                             
                             <ChartCard 
-                                title={
-                                    <div className="flex items-center justify-between w-full">
-                                        <span>Tren Rekrutmen Masuk</span>
-                                        <select 
-                                            value={trendType} 
-                                            onChange={(e) => setTrendType(e.target.value)}
-                                            className="text-sm border-gray-300 rounded-md py-1 pl-2 pr-8"
-                                        >
-                                            <option value="yearly">Per Tahun (Semua)</option>
-                                            <option value="monthly">Per Bulan (3 Tahun Terakhir)</option>
-                                        </select>
-                                    </div>
+                                title="Tren Rekrutmen Masuk"
+                                action={
+                                    <select 
+                                        value={trendType} 
+                                        onChange={(e) => setTrendType(e.target.value)}
+                                        className="text-xs sm:text-sm border-gray-300 rounded-lg py-1 pl-2 pr-8 focus:ring-1 focus:ring-emerald-500 bg-white"
+                                    >
+                                        <option value="yearly">Per Tahun (Semua)</option>
+                                        <option value="monthly">Per Bulan (3 Tahun Terakhir)</option>
+                                    </select>
                                 }
                             >
                                 <LineTrend data={trendData} xAxisKey="name" keys={['value']} colors={{ value: defaultPalette[1] }} />
@@ -104,7 +106,7 @@ export default function Tenure({ metrics }) {
                                 <HorizontalBar data={avgRegionData} color={defaultPalette[2]} onClick={(entry) => toggleFilter('region', entry.name)} />
                             </ChartCard>
                             <ChartCard title="Rata-rata Masa Kerja per Level (Tahun)">
-                                <HorizontalBar data={avgLevelData} color={defaultPalette[3]} onClick={(entry) => toggleFilter('job_level_code', entry.name)} />
+                                <HorizontalBar data={avgLevelData} color={defaultPalette[3]} onClick={(entry) => toggleFilter('job_level_code', entry.level || String(entry.name).replace('Level ', ''))} />
                             </ChartCard>
                         </div>
 
@@ -113,9 +115,9 @@ export default function Tenure({ metrics }) {
                                 <ScatterChart data={scatterData} xKey="umur" yKey="masa_kerja" zKey="anomali" xLabel="Umur" yLabel="Masa Kerja" />
                             </ChartCard>
                             
-                            <ChartCard title="Heatmap Rekrutmen (Tahun x Region)">
+                            <ChartCard title="Heatmap Rekrutmen (Tahun x Region)" height="h-auto">
                                 {heatmapData.length > 0 ? (
-                                    <Heatmap data={heatmapData} xLabels={yearNames} yLabels={regionNames} />
+                                    <Heatmap data={heatmapData} xLabels={yearNames} yLabels={regionNames} title="Heatmap Rekrutmen (Tahun × Region)" />
                                 ) : (
                                     <div className="flex items-center justify-center h-full text-gray-500">Tidak ada data</div>
                                 )}

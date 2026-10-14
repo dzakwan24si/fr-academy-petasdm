@@ -82,7 +82,7 @@ Aplikasi mobile native, penggajian, absensi, rekrutmen, dan integrasi HRIS real-
 ## 2. Ruang lingkup
 
 ### 2.1 Di dalam cakupan
-Halaman: Ringkasan Eksekutif, Peta Perusahaan, Demografi & Headcount, Masa Kerja & Rekrutmen, Risiko Pensiun, Pelatihan, Analisis Gabungan, Direktori Karyawan. Modul admin: Import Data, Pemetaan Nama PT, Koordinat Lokasi, Kualitas Data, User & Akses, Audit Log. Filter global, export Excel, insight otomatis berbasis aturan.
+Halaman: Ringkasan Eksekutif, Perusahaan (Galeri & Detail — pengganti Peta Perusahaan), Demografi & Headcount, Masa Kerja & Rekrutmen, Risiko Pensiun, Pelatihan, Analisis Gabungan, Direktori Karyawan. Modul admin: Import Data, Pemetaan Nama PT, Kualitas Data, User & Akses, Audit Log. Filter global, export Excel, insight otomatis berbasis aturan.
 
 ### 2.2 Kondisi proyek saat ini
 - Project Laravel **sudah dibuat**. React, Inertia, Tailwind, dan library grafik/peta **belum dipasang** (dikerjakan di Fase 0).
@@ -256,14 +256,14 @@ Aturan: kalimat hanya muncul jika datanya cukup (mis. denominator ≥ 10), dan i
 Sidebar ikon (kiri) dan navigasi utama:
 
 1. **Ringkasan** — `/dashboard`
-2. **Peta Perusahaan** — `/peta`
+2. **Perusahaan** — `/perusahaan` (sebelumnya Peta Perusahaan `/peta`)
 3. **Demografi & Headcount** — `/demografi`
 4. **Masa Kerja & Rekrutmen** — `/masa-kerja`
 5. **Risiko Pensiun** — `/pensiun`
 6. **Pelatihan** — `/pelatihan`
 7. **Analisis Gabungan** — `/analisis-gabungan`
-8. **Direktori Karyawan** — `/karyawan` (hanya `hr_admin`, `hr_company`, `super_admin`)
-9. **Admin** (dropdown): Import Data, Pemetaan Nama PT, Koordinat Lokasi, Kualitas Data, User & Akses, Audit Log
+8. **Direktori Karyawan** — `/karyawan`
+9. **Admin** (dropdown): Import Data, Kualitas Data, Audit Log
 
 Semua halaman kecuali Peta dan Admin memakai **FilterBar global** (Bagian 6).
 
@@ -380,55 +380,60 @@ Hanya memakai baris training yang ter-link ke karyawan (`employee_id` terisi). T
 - Jika baris memiliki `employee_id` terhubung, klik baris membuka **Detail Karyawan** (seperti pada direktori karyawan).
 - Tombol **Export Excel** (hasil filter). Export menggunakan `WithCustomValueBinder` untuk memaksa NIK menjadi format teks (menghindari notasi ilmiah di Excel).
 
-### 7.9 Peta Perusahaan (`/peta`) — halaman unggulan
+### 7.9 Galeri & Detail Perusahaan (`/perusahaan`, `/perusahaan/{kode}`) — pengganti Peta Perusahaan (Fase 10)
 
-Desain visual mengikuti prototipe (Bagian 9.3), dengan perubahan model data: **marker = lokasi kerja**, bukan satu titik per perusahaan.
+> [!NOTE]
+> Berdasarkan keputusan pemilik sistem pada Fase 10 (13 Oktober 2026), visualisasi peta Leaflet dan kolom koordinat (`latitude`, `longitude`, `coordinate_source`) telah dihapus. Halaman Peta diganti menjadi **Galeri Perusahaan** (`/perusahaan`) dan detail perusahaan menjadi **halaman penuh** (`/perusahaan/{kode}`). Rute lama `/peta` otomatis dialihkan (*redirect 301*) ke `/perusahaan`. Widget "Distribusi Tenaga Kerja per Operasional" di Dashboard tetap dipertahankan karena menggunakan visualisasi vektor SVG statis.
 
-#### 7.9.1 Layout
-Dua kolom dalam satu tampilan penuh:
-- **Kiri:** kartu peta (Leaflet). Header kartu: breadcrumb `Indonesia / {Region atau Perusahaan}` dan legenda warna region.
-- **Kanan (lebar 420 px, tetap):** panel dinamis dengan tiga keadaan (7.9.3–7.9.5).
-- Di layar < 1024 px panel pindah ke bawah peta sebagai bottom sheet.
+#### 7.9.1 Galeri Perusahaan (`/perusahaan`)
+- **Header & Filter:**
+  - Kotak pencarian nama atau kode perusahaan.
+  - Chip filter region berbentuk pil: Semua, Riau, Kalbar, Kubar, Corp, Non (dengan badge jumlah perusahaan per region).
+  - Pilihan urutan (*sorting*): Headcount terbanyak atau Alfabetis A–Z.
+  - Toggle tampilan kartu (Grid) dan tampilan baris (List).
+- **Ringkasan KPI Mini (atas galeri):** Total HC, jumlah perusahaan, dan jumlah lokasi unik (92 lokasi dari tabel `locations`).
+- **Kartu Perusahaan:**
+  - Avatar inisial perusahaan dengan latar belakang warna sesuai region (Riau = amber, Kalbar = emerald, Kubar = blue, Corp = slate, Non = violet).
+  - Nama dan kode perusahaan, tag wilayah/region.
+  - Jumlah Headcount (HC) dan jumlah unit lokasi.
+  - Mini bar distribusi generasi menggunakan palet warna standar (`lib/colors.js`).
+  - Animasi hover halus (*elevation*).
+  - Skeleton loading saat memuat data dan state kosong (*empty state*) jika pencarian tidak ditemukan.
+  - Klik kartu membuka halaman detail penuh perusahaan (`/perusahaan/{kode}`).
 
-#### 7.9.2 Peta
-- Tile: konfigurasi lewat `.env` (`VITE_MAP_TILE_URL`, `VITE_MAP_ATTRIBUTION`). **Default OpenStreetMap standar dengan atribusi**. Dilarang memakai `mt1.google.com`.
-- Pusat awal dan zoom awal mencakup Sumatera dan Kalimantan; setelah data dimuat, `fitBounds` ke semua marker berkoordinat.
-- Satu marker per `locations` yang punya koordinat. Warna marker menurut Region; ukuran/label menampilkan HC. Gunakan `leaflet.markercluster` bila marker berdekatan.
-- Hover → tooltip: nama lokasi, HC, jumlah perusahaan di lokasi tsb.
-- Klik marker → panel kanan menampilkan **lokasi tersebut** (7.9.4, mode lokasi) atau, bila hanya ada satu perusahaan di lokasi itu, langsung profil perusahaan.
-- Saat perusahaan dipilih, peta `flyToBounds` ke semua lokasi milik perusahaan tsb (animasi 1,5 dtk); saat kembali ke daftar, kembali ke tampilan awal.
-- Lokasi **tanpa koordinat** tidak muncul di peta. Tampilkan lencana "N lokasi belum punya koordinat" (link ke admin Koordinat Lokasi untuk role admin) dan tetap sertakan mereka di daftar panel.
-- Kantor pusat (`Corp`, `Corporate Office`) ditandai ikon berbeda.
+#### 7.9.2 Detail Perusahaan (`/perusahaan/{kode}`)
+- **URL Parameter:** Menggunakan kode perusahaan (kolom `companies.code`). Jika kode tidak valid menghasilkan respons 404.
+- **Banner Atas:** Banner gradien warna region dengan pola siluet daun sawit, nama perusahaan, kode, region, group, jumlah lokasi, dan tombol "Kembali ke daftar".
+- **Kartu KPI (4 metrik):** Headcount, Rata-rata Umur, Rata-rata Masa Kerja, dan Risiko Pensiun (55+ tahun).
+- **Tab Navigasi (terekam di query parameter `?tab=profil` atau `?tab=staf`):**
 
-#### 7.9.3 Panel kanan — Keadaan 1: daftar (belum ada pilihan)
-- Kotak cari: "Cari perusahaan, lokasi, atau region…" (filter lokal instan).
-- Daftar dikelompokkan per Region; tiap item: kode + nama perusahaan, HC, jumlah lokasi. Diurutkan HC menurun. Klik item → Keadaan 2.
-- Ringkasan kecil di atas daftar: total HC, jumlah perusahaan, jumlah lokasi (mengikuti scope role).
+##### A. Tab Profil
+- **Komposisi Generasi:** Donut chart Recharts dengan warna generasi standar.
+- **Level Jabatan:** Bar chart vertikal terurut standar A–F lalu 1–5.
+- **Departemen:** Bar chart vertikal Top 8 departemen dengan jumlah karyawan terbanyak.
+- **Ringkasan Pelatihan Perusahaan:**
+  - Cakupan Pelatihan (*Coverage %*) dan rasio karyawan terlatih vs total HC.
+  - Total jam pelatihan (hanya dari baris yang terhubung ke karyawan perusahaan ini).
+  - Rata-rata jam pelatihan per peserta aktif.
+- **Daftar Lokasi Perusahaan:** Chip interaktif unit lokasi beserta HC-nya. Klik chip lokasi akan langsung berpindah ke tab **Staf** dengan filter lokasi terpasang otomatis.
+- Tombol salin grafik (*Copy as Image*) didukung pada komponen kartu grafik.
 
-#### 7.9.4 Panel kanan — Keadaan 2: perusahaan terpilih
-Header berwarna teal dengan tombol "‹ Kembali ke daftar", nama perusahaan, region, group, dan jumlah lokasi. Dua tab:
+##### B. Tab Staf (SDM)
+- **Pencarian & Filter Cepat:**
+  - Kolom pencarian teks (nama, Employee ID, jabatan).
+  - Dropdown filter cepat: Level jabatan, Departemen, dan Status Kerja (*Employment Type*).
+  - Badge filter aktif dengan tombol hapus (×) individual dan tombol "Reset Filter".
+- **Tabel Karyawan:** Pagination *server-side* (20 karyawan per halaman) menampilkan foto avatar / inisial, nama, Employee ID, jabatan, level, dan umur.
+- **Interaksi:** Klik pada baris karyawan membuka **Detail Karyawan** ([`StaffDetailModal`](file:///d:/Dzakwan_PF/laragon-6.0-minimal/www/peta-sdm/resources/js/Components/staff/StaffDetailModal.jsx)).
 
-**Tab Profil**
-- KPI mini (grid 2×3): HC, rata-rata umur, rata-rata masa kerja, % perempuan, Permanent vs non-Permanent, berisiko pensiun.
-- Donut generasi; bar level jabatan; bar departemen (top 8).
-- Daftar lokasi perusahaan (nama, HC); klik lokasi → peta zoom ke lokasi itu dan tab Staff terfilter lokasi.
-- Ringkasan pelatihan perusahaan (jam total, coverage) bila ada data ter-link.
-
-**Tab Staff (SDM)** *(tidak tersedia untuk role `management`; tampilkan pesan bahwa akses terbatas pada data agregat)*
-- Cari (nama, Employee ID, jabatan), filter cepat berupa chip: lokasi, level, departemen, employment type.
-- Daftar/tabel staf, pagination server-side (20 per halaman), dengan avatar inisial (bukan foto), nama, jabatan, level, umur, masa kerja.
-- Klik staf → **Detail Karyawan** (modal).
-
-#### 7.9.5 Detail Karyawan (modal, ditampilkan dengan portal di atas semua elemen)
-Hanya untuk `super_admin`, `hr_admin`, dan `hr_company` (perusahaan sendiri). Setiap pembukaan dicatat ke audit log.
-
-Bagian modal:
-1. **Identitas:** nama, Employee ID, jabatan (kode + nama), level, departemen (kode + nama), perusahaan, lokasi, group, region.
-2. **Data pribadi:** gender, tempat dan tanggal lahir, umur, agama, status pernikahan, PTKP (kode + nama).
-3. **Kepegawaian:** tanggal masuk, masa kerja, employment type, generasi, status risiko pensiun (+ perkiraan tanggal mencapai usia pensiun).
-4. **Riwayat pelatihan** (via `employee_id`): tabel nama pelatihan, bulan/tahun, jam, internal/eksternal, reguler; total jam dan pelatihan terakhir. Jika kosong: "Belum ada catatan pelatihan yang terhubung ke karyawan ini."
-- Modal **hanya-baca**. Tidak ada tombol simpan/edit (prototipe lama punya form edit; itu tidak dibawa).
-- Tutup dengan tombol X, klik latar, atau tombol Esc. Fokus terkunci di modal (aksesibilitas).
+#### 7.9.3 Detail Karyawan (Modal Netral `StaffDetailModal`)
+Dipindahkan ke lokasi netral (`resources/js/Components/staff/StaffDetailModal.jsx`) sehingga dapat dipakai bersama oleh Galeri Perusahaan, Direktori Karyawan, dan Data Training Mentah:
+1. **Identitas:** Nama, Employee ID, jabatan, level, departemen, perusahaan, lokasi, group, region, serta foto profil (lengkap dengan fitur upload & hapus foto).
+2. **Data pribadi:** Gender, tempat dan tanggal lahir, umur, agama, status pernikahan, PTKP.
+3. **Kepegawaian:** Tanggal masuk, masa kerja, status kepegawaian, generasi, dan perkiraan tanggal pensiun.
+4. **Riwayat pelatihan:** Daftar pelatihan terhubung, bulan/tahun, jam, penyelenggara, dan sifat pelatihan (reguler/non-reguler).
+- Modal **hanya-baca** untuk data identitas dan pribadi, serta mendukung unggah/hapus foto profil karyawan.
+- Tutup dengan tombol X, klik latar, atau tombol Esc. Focus trap untuk aksesibilitas.
 
 ---
 

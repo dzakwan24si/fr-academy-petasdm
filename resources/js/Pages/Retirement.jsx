@@ -8,6 +8,7 @@ import { defaultPalette } from '@/lib/colors';
 import { formatNumber } from '@/lib/format';
 import { useCopyAsImage } from '@/hooks/useCopyAsImage';
 import { CopyButton } from '@/Components/ui/CopyButton';
+import { InfoTooltip } from '@/Components/ui/InfoTooltip';
 import { useCrossFilter } from '@/hooks/useCrossFilter';
 import { useFilters } from '@/hooks/useFilters';
 
@@ -147,7 +148,37 @@ export default function Retirement({ metrics }) {
                                                     className="hover:bg-gray-100 transition-colors cursor-pointer"
                                                     onClick={() => toggleFilter('job_level_code', row.name)}
                                                 >
-                                                    <td className="px-4 py-3 font-medium text-gray-900">{row.name}</td>
+                                                    <td className="px-4 py-3 font-medium text-gray-900">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-semibold text-gray-900">Level {row.name}</span>
+                                                            {row.total_titles > 0 && (
+                                                                <span onClick={(e) => e.stopPropagation()}>
+                                                                    <InfoTooltip 
+                                                                        title={`Komposisi Jabatan - Level ${row.name}`}
+                                                                        text={
+                                                                            <div className="space-y-1.5 text-xs">
+                                                                                <div className="flex items-center justify-between text-[11px] text-gray-400 pb-1 border-b border-gray-100">
+                                                                                    <span>Jabatan ({row.total_titles} jenis)</span>
+                                                                                    <span>Jumlah</span>
+                                                                                </div>
+                                                                                {Object.entries(row.top_titles || {}).slice(0, 6).map(([title, count]) => (
+                                                                                    <div key={title} className="flex items-center justify-between gap-3 text-gray-700">
+                                                                                        <span className="truncate pr-1">{title}</span>
+                                                                                        <span className="font-semibold text-gray-900 shrink-0">{formatNumber(count)}</span>
+                                                                                    </div>
+                                                                                ))}
+                                                                                {row.total_titles > 6 && (
+                                                                                    <p className="text-[10px] text-emerald-700 italic pt-0.5 font-medium">
+                                                                                        + {row.total_titles - 6} jabatan lainnya di level ini
+                                                                                    </p>
+                                                                                )}
+                                                                            </div>
+                                                                        }
+                                                                    />
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </td>
                                                     <td className="px-4 py-3 text-right">{formatNumber(row.total)}</td>
                                                     <td className="px-4 py-3 text-right text-red-600 font-medium">{formatNumber(row.value)}</td>
                                                     <td className="px-4 py-3 text-right"><HeatCell pct={row.pct} /></td>

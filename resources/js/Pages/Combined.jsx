@@ -93,9 +93,14 @@ export default function Combined({ metrics }) {
                             </ChartCard>
                             <ChartCard title="Coverage Pelatihan per Level (%)">
                                 <HorizontalBar 
-                                    data={metrics.coverage.level.map(d => ({ name: d.name, value: d.pct }))} 
+                                    data={metrics.coverage.level.map(d => ({ 
+                                        name: String(d.name).startsWith('Level') ? d.name : `Level ${d.name}`, 
+                                        level: d.name,
+                                        value: d.pct,
+                                        top_titles: d.top_titles,
+                                    }))} 
                                     color={defaultPalette[1]} 
-                                    onClick={(entry) => toggleFilter('job_level_code', entry.name)}
+                                    onClick={(entry) => toggleFilter('job_level_code', entry.level || String(entry.name).replace('Level ', ''))}
                                 />
                             </ChartCard>
                         </div>
@@ -131,9 +136,14 @@ export default function Combined({ metrics }) {
                             </ChartCard>
                             <ChartCard title="Rata-rata Jam per Level">
                                 <HorizontalBar 
-                                    data={metrics.hours.level.map(d => ({ name: d.name, value: d.avg_hours }))} 
+                                    data={metrics.hours.level.map(d => ({ 
+                                        name: String(d.name).startsWith('Level') ? d.name : `Level ${d.name}`, 
+                                        level: d.name,
+                                        value: d.avg_hours,
+                                        top_titles: d.top_titles,
+                                    }))} 
                                     color={defaultPalette[5]} 
-                                    onClick={(entry) => toggleFilter('job_level_code', entry.name)}
+                                    onClick={(entry) => toggleFilter('job_level_code', entry.level || String(entry.name).replace('Level ', ''))}
                                 />
                             </ChartCard>
                             <ChartCard title="Rata-rata Jam per Gender">

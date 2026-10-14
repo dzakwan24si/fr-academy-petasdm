@@ -5,9 +5,9 @@ use App\Http\Controllers\DataQualityController;
 use App\Http\Controllers\EmployeeDirectoryController;
 use App\Http\Controllers\FilterOptionsController;
 use App\Http\Controllers\ImportController;
-use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TrainingRecordController;
+use App\Models\Company;
 use App\Services\CombinedMetrics;
 use App\Services\InsightBuilder;
 use App\Services\RetirementMetrics;
@@ -78,9 +78,20 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('dashboard');
 
+    // /peta redirect ke /perusahaan (URL lama tetap berfungsi)
     Route::get('/peta', function () {
-        return Inertia::render('Map/Index');
+        return redirect('/perusahaan', 301);
     })->name('peta');
+
+    Route::get('/perusahaan', function () {
+        return Inertia::render('Company/Index');
+    })->name('perusahaan');
+
+    Route::get('/perusahaan/{code}', function (string $code) {
+        $company = Company::where('code', $code)->firstOrFail();
+
+        return Inertia::render('Company/Show', ['companyCode' => $code, 'companyId' => $company->id]);
+    })->name('perusahaan.show');
 
     Route::get('/demografi', function (Request $request, EmployeeFilter $filter) {
         $asOf = $request->input('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::now();
@@ -143,9 +154,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/admin/import/portal-sync', [ImportController::class, 'syncPortal'])->middleware('throttle:3,1')->name('admin.import.portal-sync');
 
     Route::get('/admin/kualitas-data', [DataQualityController::class, 'index'])->name('admin.kualitas');
-    Route::get('/admin/lokasi', [LocationController::class, 'index'])->name('admin.lokasi');
-    Route::post('/admin/lokasi/{location}', [LocationController::class, 'update'])->name('admin.lokasi.update');
-    Route::post('/admin/lokasi-import', [LocationController::class, 'import'])->name('admin.lokasi.import');
+    Route::redirect('/admin/quality', '/admin/kualitas-data');
+    // /admin/lokasi dihapus — Master Lokasi tidak ada lagi
 
     // Endpoint JSON
     Route::prefix('data')->name('data.')->group(function () {

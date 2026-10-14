@@ -2,20 +2,21 @@
 
 namespace App\Services;
 
-use Illuminate\Http\Request;
+use App\Models\Employee;
 use App\Support\EmployeeFilter;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RetirementMetrics
 {
     public function getMetrics(Request $request, EmployeeFilter $filter)
     {
-        $query = \App\Models\Employee::query();
+        $query = Employee::query();
         $query = $filter->apply($query, $request);
 
         $employees = $query->get([
-            'birth_date', 'region', 'job_level_code', 'organization_name', 'company_id', 'job_title_name'
+            'birth_date', 'region', 'job_level_code', 'organization_name', 'company_id', 'job_title_name',
         ]);
 
         if ($employees->isEmpty()) {
@@ -39,34 +40,45 @@ class RetirementMetrics
         }
 
         $byLevel = [];
+        $titlesByLevel = [];
         $byDept = [];
         $byRegion = [];
         $byCompanyId = [];
-        
+
         $concentratedPositions = [];
 
         foreach ($employees as $e) {
-            if (!$e->birth_date) continue;
+            if (! $e->birth_date) {
+                continue;
+            }
 
             $birth = Carbon::parse($e->birth_date);
             $ageFloat = $birth->diffInMonths($asOf) / 12;
 
             $retireDate = $birth->copy()->addYears($retireAge);
-            $yearsToRetireFloat = $asOf->diffInMonths($retireDate, false) / 12; 
-            
+            $yearsToRetireFloat = $asOf->diffInMonths($retireDate, false) / 12;
+
             $isRetireNow = $ageFloat >= $retireAge;
-            $in1Year = $yearsToRetireFloat <= 1; 
+            $in1Year = $yearsToRetireFloat <= 1;
             $in3Years = $yearsToRetireFloat <= 3;
             $in5Years = $yearsToRetireFloat <= 5;
 
-            if ($isRetireNow) $kpi['now']++;
-            if ($in1Year) $kpi['1_year']++;
-            if ($in3Years) $kpi['3_years']++;
-            if ($in5Years) $kpi['5_years']++;
+            if ($isRetireNow) {
+                $kpi['now']++;
+            }
+            if ($in1Year) {
+                $kpi['1_year']++;
+            }
+            if ($in3Years) {
+                $kpi['3_years']++;
+            }
+            if ($in5Years) {
+                $kpi['5_years']++;
+            }
 
             $rYear = $retireDate->year;
             if ($isRetireNow || $rYear <= $currentYear) {
-                $projection[$currentYear]++; 
+                $projection[$currentYear]++;
             } elseif ($rYear <= $currentYear + 5) {
                 $projection[$rYear]++;
             }
@@ -77,12 +89,20 @@ class RetirementMetrics
             $cid = $e->company_id ?? 0;
             $title = $e->job_title_name ?? 'Unknown';
 
-            if (!isset($byLevel[$lvl])) $byLevel[$lvl] = ['total' => 0, 'risk' => 0];
-            if (!isset($byDept[$dept])) $byDept[$dept] = ['total' => 0, 'risk' => 0];
-            if (!isset($byRegion[$reg])) $byRegion[$reg] = ['total' => 0, 'risk' => 0];
-            if (!isset($byCompanyId[$cid])) $byCompanyId[$cid] = ['total' => 0, 'risk' => 0];
-            
-            if (!isset($concentratedPositions[$title])) {
+            if (! isset($byLevel[$lvl])) {
+                $byLevel[$lvl] = ['total' => 0, 'risk' => 0];
+            }
+            if (! isset($byDept[$dept])) {
+                $byDept[$dept] = ['total' => 0, 'risk' => 0];
+            }
+            if (! isset($byRegion[$reg])) {
+                $byRegion[$reg] = ['total' => 0, 'risk' => 0];
+            }
+            if (! isset($byCompanyId[$cid])) {
+                $byCompanyId[$cid] = ['total' => 0, 'risk' => 0];
+            }
+
+            if (! isset($concentratedPositions[$title])) {
                 $concentratedPositions[$title] = ['total' => 0, 'risk_3y' => 0];
             }
 
@@ -92,27 +112,39 @@ class RetirementMetrics
             $byCompanyId[$cid]['total']++;
             $concentratedPositions[$title]['total']++;
 
+            if ($lvl !== 'Unknown' && $title !== 'Unknown') {
+                if (! isset($titlesByLevel[$lvl])) {
+                    $titlesByLevel[$lvl] = [];
+                }
+                $titlesByLevel[$lvl][$title] = ($titlesByLevel[$lvl][$title] ?? 0) + 1;
+            }
+
             if ($isRetireNow) {
                 $byLevel[$lvl]['risk']++;
                 $byDept[$dept]['risk']++;
                 $byRegion[$reg]['risk']++;
                 $byCompanyId[$cid]['risk']++;
             }
-            
+
             if ($ageFloat >= ($retireAge - 3)) {
                 $concentratedPositions[$title]['risk_3y']++;
             }
         }
 
+        foreach ($titlesByLevel as $lvl => &$tList) {
+            arsort($tList);
+        }
+        unset($tList);
+
         $companyIds = array_keys($byCompanyId);
         $companyNames = DB::table('companies')->whereIn('id', $companyIds)->pluck('name', 'id');
-        
+
         $byCompany = [];
         foreach ($byCompanyId as $cid => $data) {
             $name = $companyNames[$cid] ?? 'Unknown';
-            $byCompany[$name] = ($byCompany[$name] ?? 0) + $data['risk']; 
+            $byCompany[$name] = ($byCompany[$name] ?? 0) + $data['risk'];
         }
-        
+
         $regionRisk = [];
         foreach ($byRegion as $reg => $data) {
             $regionRisk[$reg] = $data['risk'];
@@ -125,10 +157,12 @@ class RetirementMetrics
                 'name' => $lvl,
                 'total' => $data['total'],
                 'value' => $data['risk'],
-                'pct' => round($pct, 1)
+                'pct' => round($pct, 1),
+                'top_titles' => array_slice($titlesByLevel[$lvl] ?? [], 0, 6, true),
+                'total_titles' => count($titlesByLevel[$lvl] ?? []),
             ];
         }
-        usort($levelTable, fn($a, $b) => $b['value'] <=> $a['value']); 
+        usort($levelTable, fn ($a, $b) => $b['value'] <=> $a['value']);
 
         $deptTable = [];
         foreach ($byDept as $dept => $data) {
@@ -137,10 +171,10 @@ class RetirementMetrics
                 'name' => $dept,
                 'total' => $data['total'],
                 'value' => $data['risk'],
-                'pct' => round($pct, 1)
+                'pct' => round($pct, 1),
             ];
         }
-        usort($deptTable, fn($a, $b) => $b['value'] <=> $a['value']);
+        usort($deptTable, fn ($a, $b) => $b['value'] <=> $a['value']);
 
         $concentratedTable = [];
         foreach ($concentratedPositions as $title => $data) {
@@ -150,11 +184,11 @@ class RetirementMetrics
                     'title' => $title,
                     'total' => $data['total'],
                     'risk' => $data['risk_3y'],
-                    'pct' => round($pct, 1)
+                    'pct' => round($pct, 1),
                 ];
             }
         }
-        usort($concentratedTable, fn($a, $b) => $b['risk'] <=> $a['risk']);
+        usort($concentratedTable, fn ($a, $b) => $b['risk'] <=> $a['risk']);
 
         return [
             'kpi' => $kpi,
@@ -167,10 +201,10 @@ class RetirementMetrics
             'bars' => [
                 'region' => $regionRisk,
                 'company' => $byCompany,
-            ]
+            ],
         ];
     }
-    
+
     private function emptyMetrics()
     {
         return [

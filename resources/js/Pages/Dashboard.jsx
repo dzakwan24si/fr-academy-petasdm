@@ -10,7 +10,7 @@ import { LineTrend } from '@/Components/charts/LineTrend';
 import { RegionalMapWidget } from '@/Components/charts/RegionalMapWidget';
 import { generationColors } from '@/lib/colors';
 import { formatNumber } from '@/lib/format';
-import { levelLabels } from '@/lib/constants';
+import { InfoTooltip } from '@/Components/ui/InfoTooltip';
 import { UserPlus, UserCheck } from 'lucide-react';
 import { useCopyAsImage } from '@/hooks/useCopyAsImage';
 import { CopyButton } from '@/Components/ui/CopyButton';
@@ -35,7 +35,9 @@ export default function Dashboard({ metrics, insight }) {
     const stackedData = hasData ? levelOrder.map(level => {
         const gens = metrics.generations_by_level?.[level] || {};
         return {
-            name: levelLabels[level] ? `${level} - ${levelLabels[level]}` : level,
+            name: `Level ${level}`,
+            level,
+            top_titles: metrics.titles_by_level?.[level] || {},
             ...gens
         };
     }) : [];
@@ -63,11 +65,15 @@ export default function Dashboard({ metrics, insight }) {
         const pensiun = metrics.retire_risk_by_level?.[level] || 0;
         const total = metrics.hc_by_level?.[level] || 0;
         const pct = total > 0 ? (pensiun / total) * 100 : 0;
+        const topTitles = metrics.titles_by_level?.[level] || {};
         return {
-            name: levelLabels[level] ? `${level} - ${levelLabels[level]}` : level,
+            name: `Level ${level}`,
+            level,
             value: pensiun,
             pct: pct,
-            total: total
+            total: total,
+            top_titles: topTitles,
+            total_titles: Object.keys(topTitles).length
         };
     }).filter(row => row.total > 0).sort((a, b) => b.pct - a.pct) : [];
 
@@ -152,7 +158,7 @@ export default function Dashboard({ metrics, insight }) {
                                 </div>
                             </div>
 
-                            <ChartCard title="Top 10 Perusahaan (HC)" loading={!metrics}>
+                            <ChartCard title="Top 10 Perusahaan (HC)" loading={!metrics} className="lg:col-span-2">
                                 <HorizontalBar 
                                     data={companyData} 
                                     dataKey="value" 
@@ -192,8 +198,43 @@ export default function Dashboard({ metrics, insight }) {
                                                     else if (row.pct > 0) badgeClass = "bg-green-600 text-white";
 
                                                     return (
-                                                        <tr key={row.name} className="hover:bg-gray-50 transition-colors">
-                                                            <td className="px-4 py-3 text-gray-800 font-medium">{row.name}</td>
+                                                        <tr key={row.name} className="hover:bg-emerald-50/40 transition-colors">
+                                                            <td className="px-4 py-3 text-gray-800 font-medium">
+                                                                <div className="flex items-center gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => toggleFilter('job_level_code', row.level)}
+                                                                        className="font-semibold text-gray-900 hover:text-emerald-700 transition-colors text-left"
+                                                                        title={`Filter data per ${row.name}`}
+                                                                    >
+                                                                        {row.name}
+                                                                    </button>
+                                                                    {row.total_titles > 0 && (
+                                                                        <InfoTooltip 
+                                                                            title={`Komposisi Jabatan - ${row.name}`}
+                                                                            text={
+                                                                                <div className="space-y-1.5 text-xs">
+                                                                                    <div className="flex items-center justify-between text-[11px] text-gray-400 pb-1 border-b border-gray-100">
+                                                                                        <span>Jabatan ({row.total_titles} jenis)</span>
+                                                                                        <span>Jumlah</span>
+                                                                                    </div>
+                                                                                    {Object.entries(row.top_titles).slice(0, 6).map(([title, count]) => (
+                                                                                        <div key={title} className="flex items-center justify-between gap-3 text-gray-700">
+                                                                                            <span className="truncate pr-1">{title}</span>
+                                                                                            <span className="font-semibold text-gray-900 shrink-0">{formatNumber(count)}</span>
+                                                                                        </div>
+                                                                                    ))}
+                                                                                    {row.total_titles > 6 && (
+                                                                                        <p className="text-[10px] text-emerald-700 italic pt-0.5 font-medium">
+                                                                                            + {row.total_titles - 6} jabatan lainnya di level ini
+                                                                                        </p>
+                                                                                    )}
+                                                                                </div>
+                                                                            }
+                                                                        />
+                                                                    )}
+                                                                </div>
+                                                            </td>
                                                             <td className="px-4 py-3 text-right text-gray-600">{formatNumber(row.total)}</td>
                                                             <td className="px-4 py-3 text-right text-gray-600">{formatNumber(row.value)}</td>
                                                             <td className="px-4 py-3 text-right">

@@ -44,7 +44,8 @@ export function useCopyAsImage({ title = 'export', onBeforeCapture = null, onAft
             try {
                 const dataUrl = await toPng(ref.current, { backgroundColor: '#ffffff', filter });
                 const link = document.createElement('a');
-                link.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.png`;
+                const titleStr = typeof title === 'string' ? title : 'grafik';
+                link.download = `${titleStr.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.png`;
                 link.href = dataUrl;
                 link.click();
                 setStatus('downloaded');

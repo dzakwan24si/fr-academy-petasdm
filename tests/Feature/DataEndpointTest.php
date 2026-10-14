@@ -23,8 +23,9 @@ class DataEndpointTest extends TestCase
         $this->company1Id = DB::table('companies')->insertGetId(['code' => 'CA', 'name' => 'Company A']);
         $this->company2Id = DB::table('companies')->insertGetId(['code' => 'CB', 'name' => 'Company B']);
 
-        $this->location1Id = DB::table('locations')->insertGetId(['code' => 'L1', 'name' => 'Location 1', 'latitude' => 1.0, 'longitude' => 1.0]);
-        $this->location2Id = DB::table('locations')->insertGetId(['code' => 'L2', 'name' => 'Location 2', 'latitude' => 2.0, 'longitude' => 2.0]);
+        // Kolom latitude/longitude sudah dihapus; location tanpa koordinat
+        $this->location1Id = DB::table('locations')->insertGetId(['code' => 'L1', 'name' => 'Location 1']);
+        $this->location2Id = DB::table('locations')->insertGetId(['code' => 'L2', 'name' => 'Location 2']);
 
         DB::table('employees')->insert([
             ['employee_id' => 'E1', 'name' => 'E1', 'company_id' => $this->company1Id, 'location_id' => $this->location1Id, 'region' => 'Riau', 'gender' => 'Male', 'birth_date' => '1990-01-01', 'join_date' => '2015-01-01'],
@@ -46,7 +47,7 @@ class DataEndpointTest extends TestCase
         $response->assertStatus(200);
         $response->assertJsonStructure([
             'data' => [
-                '*' => ['id', 'code', 'name', 'employee_count', 'location_count', 'region'],
+                '*' => ['id', 'code', 'name', 'employee_count', 'location_count', 'region', 'generations'],
             ],
             'total_locations',
         ]);
@@ -67,24 +68,12 @@ class DataEndpointTest extends TestCase
         $this->assertEquals(2, $c2['location_count']);
     }
 
-    public function test_locations_endpoint_groups_by_location_id_and_avoids_n_plus_one()
+    public function test_map_locations_endpoint_returns_empty_array()
     {
-        DB::enableQueryLog();
-
+        // /data/map/locations masih ada tapi mengembalikan array kosong (peta sudah dihapus)
         $response = $this->actingAs($this->user)->getJson('/data/map/locations');
-
         $response->assertStatus(200);
-
-        $queries = DB::getQueryLog();
-        $this->assertLessThanOrEqual(5, count($queries), 'Too many queries, N+1 detected');
-
-        // There should be exactly 2 locations
-        $response->assertJsonCount(2);
-
-        $data = collect($response->json());
-        $l1 = $data->firstWhere('id', $this->location1Id);
-        $this->assertCount(2, $l1['companies'], 'Location 1 should have 2 companies');
-        $this->assertEquals(4, $l1['employee_count'], 'Location 1 should have 4 employees');
+        $response->assertExactJson([]);
     }
 
     public function test_employee_detail_endpoint_creates_audit_log()

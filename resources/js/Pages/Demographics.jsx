@@ -3,7 +3,6 @@ import { Head, Deferred } from '@inertiajs/react';
 import FilterBar from '@/Components/ui/FilterBar';
 import { ChartCard } from '@/Components/ui/ChartCard';
 import { HorizontalBar } from '@/Components/charts/HorizontalBar';
-import { Treemap } from '@/Components/charts/Treemap';
 import { Histogram } from '@/Components/charts/Histogram';
 import { PopulationPyramid } from '@/Components/charts/PopulationPyramid';
 import { Heatmap } from '@/Components/charts/Heatmap';
@@ -27,16 +26,6 @@ export default function Demographics({ metrics }) {
     const regionData = hasData ? Object.entries(metrics.hc_by_region)
         .map(([name, value]) => ({ name, value }))
         .sort((a, b) => b.value - a.value) : [];
-
-    const deptData = hasData ? Object.entries(metrics.hc_by_dept)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value) : [];
-        
-    // Treemap structure: root with children
-    const deptTreemapData = hasData ? [{
-        name: 'Departments',
-        children: deptData
-    }] : [];
 
     // Histogram data (Age)
     const ageBins = ['<25', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55+'];
@@ -71,15 +60,19 @@ export default function Demographics({ metrics }) {
     // HC per level
     const levelOrder = hasData && metrics.level_order ? metrics.level_order : [];
     const levelData = hasData ? levelOrder.map(lvl => ({
-        name: lvl,
-        value: metrics.hc_by_level[lvl] || 0
+        name: `Level ${lvl}`,
+        level: lvl,
+        value: metrics.hc_by_level[lvl] || 0,
+        top_titles: metrics.titles_by_level?.[lvl] || {}
     })).filter(d => d.value > 0) : [];
 
     // Gender by Level (Stacked)
     const genderLevelData = hasData ? levelOrder.map(lvl => ({
-        name: lvl,
+        name: `Level ${lvl}`,
+        level: lvl,
         Male: metrics.gender_by_level[lvl]?.Male || 0,
-        Female: metrics.gender_by_level[lvl]?.Female || 0
+        Female: metrics.gender_by_level[lvl]?.Female || 0,
+        top_titles: metrics.titles_by_level?.[lvl] || {}
     })).filter(d => d.Male > 0 || d.Female > 0) : [];
 
     // Gender Donut
@@ -151,12 +144,6 @@ export default function Demographics({ metrics }) {
                                 <HorizontalBar data={groupData} color={defaultPalette[1]} onClick={(entry) => toggleFilter('group', entry.name)} />
                             </ChartCard>
                         </div>
-                        
-                        <div className="grid grid-cols-1 gap-6">
-                            <ChartCard title="HC per Departemen (Treemap)" className="h-96">
-                                <Treemap data={deptTreemapData} dataKey="value" nameKey="name" />
-                            </ChartCard>
-                        </div>
 
                         {/* Section 2: Age & Gender */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -181,7 +168,7 @@ export default function Demographics({ metrics }) {
                         {/* Section 4: Job Levels & Gender Details */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <ChartCard title="HC per Level Jabatan">
-                                <HorizontalBar data={levelData} color={defaultPalette[3]} onClick={(entry) => toggleFilter('job_level_code', entry.name)} />
+                                <HorizontalBar data={levelData} color={defaultPalette[3]} onClick={(entry) => toggleFilter('job_level_code', entry.level || entry.name.replace('Level ', ''))} />
                             </ChartCard>
                             <ChartCard title="Gender per Level Jabatan" className="lg:col-span-2">
                                 <StackedBar data={genderLevelData} keys={['Male', 'Female']} xAxisKey="name" colors={{ Male: '#3B82F6', Female: '#EC4899' }} />
@@ -244,7 +231,6 @@ function DemographicsSkeleton() {
                 <div className="h-80 bg-gray-100 animate-pulse rounded-2xl" />
                 <div className="h-80 bg-gray-100 animate-pulse rounded-2xl" />
             </div>
-            <div className="h-96 bg-gray-100 animate-pulse rounded-2xl" />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="h-80 bg-gray-100 animate-pulse rounded-2xl" />
                 <div className="h-80 bg-gray-100 animate-pulse rounded-2xl lg:col-span-2" />

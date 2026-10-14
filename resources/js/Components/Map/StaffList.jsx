@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search } from 'lucide-react';
-import { StaffDetailModal } from './StaffDetailModal';
+import { StaffDetailModal } from '@/Components/staff/StaffDetailModal';
 import EmployeeAvatar from '@/Components/EmployeeAvatar';
 
 export function StaffList({ company, location }) {

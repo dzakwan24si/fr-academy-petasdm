@@ -12,3 +12,6 @@
   1. Jika mengandung kata 'office' atau 'jakarta', dikategorikan sebagai **HO (Head Office)**.
   2. Jika mengandung kata 'pabrik', 'mill', 'kcp', 'biodiesel', atau 'bulking', dikategorikan sebagai **Mill**.
   3. Sisanya secara *default fallback* dikategorikan sebagai **Estate**. Logika ini diimplementasikan terpusat pada service layer backend (`WorkforceMetrics.php`).
+- **Peta Diganti dengan Galeri Perusahaan (2026-10-13)**: Visualisasi geospasial (Leaflet/OpenStreetMap) dihapus sepenuhnya. Kolom `latitude`, `longitude`, dan `coordinate_source` dihapus dari tabel `locations` via migrasi reversible. Tabel `locations` tetap ada untuk relasi ke `employees`. Widget "Distribusi Tenaga Kerja per Operasional" di Dashboard menggunakan SVG statis (bukan Leaflet) sehingga tidak terpengaruh. URL `/peta` redirect 301 ke `/perusahaan` untuk menjaga backward compatibility.
+- **StaffDetailModal Lokasi Netral**: Modal detail karyawan dipindahkan dari `Components/Map/` ke `Components/staff/` agar bisa digunakan oleh Direktori Karyawan, Data Training Mentah, dan halaman detail Perusahaan tanpa bergantung konteks peta.
+
