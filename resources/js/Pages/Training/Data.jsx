@@ -77,7 +77,7 @@ export default function TrainingData({ records, filters }) {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Data Training Mentah</h1>
                     <p className="text-sm text-gray-500 mt-1">
-                        Daftar lengkap rekam data pelatihan ({records.total?.toLocaleString('id-ID')} baris).
+                        Daftar lengkap riwayat keikutsertaan pelatihan ({records.total?.toLocaleString('id-ID')} data).
                     </p>
                 </div>
                 

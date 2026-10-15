@@ -1,13 +1,24 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { formatNumber } from '@/lib/format';
-import { generationColors, defaultPalette } from '@/lib/colors';
+import { generationColors, facilityColors, defaultPalette } from '@/lib/colors';
 
-export function DonutChart({ data, nameKey = 'name', dataKey = 'value', colors, onClick }) {
+export function DonutChart({ 
+    data, 
+    nameKey = 'name', 
+    dataKey = 'value', 
+    colors, 
+    unit = '', 
+    hideLegend = false, 
+    onClick 
+}) {
     if (!data || data.length === 0) return null;
 
-    const getColor = (name, index) => {
+    const getColor = (entry, index) => {
+        if (entry?.fill) return entry.fill;
+        const name = entry?.[nameKey] || entry?.name;
         if (colors && colors[name]) return colors[name];
-        if (generationColors[name]) return generationColors[name];
+        if (facilityColors && facilityColors[name]) return facilityColors[name];
+        if (generationColors && generationColors[name]) return generationColors[name];
         return defaultPalette[index % defaultPalette.length];
     };
 
@@ -42,17 +53,17 @@ export function DonutChart({ data, nameKey = 'name', dataKey = 'value', colors, 
                     {data.map((entry, index) => (
                         <Cell 
                             key={`cell-${index}`} 
-                            fill={getColor(entry[nameKey], index)} 
+                            fill={getColor(entry, index)} 
                             onClick={() => onClick && onClick(entry)}
                             className={onClick ? "cursor-pointer hover:opacity-80 transition-opacity outline-none" : ""}
                         />
                     ))}
                 </Pie>
                 <RechartsTooltip 
-                    formatter={(value) => [formatNumber(value), 'Jumlah']} 
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    formatter={(value, name) => [`${formatNumber(value)}${unit ? ' ' + unit : ''}`, 'Jumlah']} 
+                    contentStyle={{ borderRadius: '12px', border: '1px solid #E5E7EB', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)', padding: '8px 12px' }}
                 />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                {!hideLegend && <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />}
             </PieChart>
         </ResponsiveContainer>
     );

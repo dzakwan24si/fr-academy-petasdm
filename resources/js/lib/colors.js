@@ -5,6 +5,12 @@ export const generationColors = {
     'Gen Z': '#004D40'    // corporate-dark
 };
 
+export const facilityColors = {
+    'Estate': '#004D40', // corporate-dark
+    'Mill': '#2E7D32',   // corporate-light
+    'HO': '#F59E0B'      // amber-500
+};
+
 export const defaultPalette = [
     '#2E7D32', // corporate-light
     '#F59E0B', // amber

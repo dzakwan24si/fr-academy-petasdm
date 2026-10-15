@@ -309,7 +309,7 @@ class DataController extends Controller
             'month',
             'year',
             'source_type',
-            DB::raw('COUNT(DISTINCT employee_id) as participants'),
+            DB::raw('COUNT(DISTINCT COALESCE(NULLIF(nik, ""), participant_name)) as participants'),
             DB::raw('SUM(hours) as total_hours')
         )
             ->groupBy('training_name', 'month', 'year', 'source_type');

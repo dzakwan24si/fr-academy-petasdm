@@ -91,16 +91,18 @@ export default function Training({ metrics, filters }) {
                         {/* KPIs */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                             <KpiCard 
-                                title="Total Baris" 
+                                title="Total Partisipasi" 
                                 value={kpi.total_rows} 
+                                unit="kegiatan"
                                 icon={BarChart2} 
-                                description="Total seluruh baris rekam data pelatihan yang tercatat dalam sistem." 
+                                description="Total frekuensi keikutsertaan seluruh karyawan dalam berbagai kegiatan pelatihan." 
                             />
                             <KpiCard 
-                                title="Peserta Unik" 
+                                title="Karyawan Dilatih" 
                                 value={kpi.unique_participants} 
+                                unit="orang"
                                 icon={Users} 
-                                description="Jumlah individu karyawan unik yang tercatat pernah mengikuti pelatihan." 
+                                description="Jumlah individu karyawan yang pernah mengikuti pelatihan (dihitung 1 kali per orang tanpa duplikasi)." 
                             />
                             <KpiCard 
                                 title="Total Jam" 
@@ -136,15 +138,22 @@ export default function Training({ metrics, filters }) {
 
                         {/* Trend */}
                         <ChartCard title="Tren Jam & Peserta Pelatihan" className="h-96">
-                            <LineTrend data={trendData} xAxisKey="name" keys={['hours', 'participants']} colors={{ hours: defaultPalette[0], participants: defaultPalette[1] }} />
+                            <LineTrend 
+                                data={trendData} 
+                                xAxisKey="name" 
+                                keys={['hours', 'participants']} 
+                                colors={{ hours: defaultPalette[0], participants: defaultPalette[1] }} 
+                                labels={{ hours: 'Total Jam (Sumbu Kiri)', participants: 'Jumlah Peserta (Sumbu Kanan)' }}
+                                dualAxis={true}
+                            />
                         </ChartCard>
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <ChartCard title="Reguler vs Non Reguler">
-                                <DonutChart data={regularityData} onClick={(entry) => toggleFilter('is_regular', entry.name === 'Reguler' ? '1' : '0')} />
+                                <DonutChart data={regularityData} unit="partisipasi" onClick={(entry) => toggleFilter('is_regular', entry.name === 'Reguler' ? '1' : '0')} />
                             </ChartCard>
                             <ChartCard title="Internal vs Eksternal">
-                                <DonutChart data={sourceData} onClick={(entry) => toggleFilter('is_internal', entry.name === 'Internal' ? '1' : '0')} />
+                                <DonutChart data={sourceData} unit="partisipasi" onClick={(entry) => toggleFilter('is_internal', entry.name === 'Internal' ? '1' : '0')} />
                             </ChartCard>
                             <ChartCard title="Gender x Level (Peserta)">
                                 <StackedBar data={genderLevelData} keys={['Male', 'Female']} xAxisKey="name" colors={{ Male: '#3B82F6', Female: '#EC4899' }} onClick={(key) => toggleFilter('gender', key === 'Male' ? 'Laki-laki' : 'Perempuan')} />

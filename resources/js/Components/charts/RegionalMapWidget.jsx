@@ -7,11 +7,11 @@ export function RegionalMapWidget({ data, total }) {
 
     // Hardcode positions for the regions for the SVG overlay
     const regionPositions = {
-        'Riau': { top: '35%', left: '20%' },
-        'Kalbar': { top: '35%', left: '42%' },
-        'Kubar': { top: '40%', left: '55%' },
-        'Corp': { top: '70%', left: '35%' },
-        'Non': { top: '70%', left: '75%' },
+        'Riau': { top: '28%', left: '16%' },
+        'Kalbar': { top: '18%', left: '40%' },
+        'Kubar': { top: '40%', left: '64%' },
+        'Corp': { top: '78%', left: '28%' },
+        'Non': { top: '76%', left: '80%' },
     };
 
     const displayRegions = ['Riau', 'Kalbar', 'Kubar', 'Corp', 'Non'];
@@ -24,10 +24,10 @@ export function RegionalMapWidget({ data, total }) {
     };
 
     return (
-        <div className="relative w-full h-[400px] flex items-center justify-center bg-white rounded-xl overflow-hidden">
+        <div className="relative w-full h-[420px] flex items-center justify-center bg-white rounded-xl overflow-hidden">
             {/* SVG representation of Indonesia map for background */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4">
-                <img src="/indonesia-map.svg" alt="Peta Indonesia" className="w-[90%] h-auto opacity-15 grayscale object-contain" />
+                <img src="/indonesia-map.svg" alt="Peta Indonesia" className="w-[92%] h-auto opacity-15 grayscale object-contain" />
             </div>
 
             {displayRegions.map(region => {
@@ -39,24 +39,24 @@ export function RegionalMapWidget({ data, total }) {
                 return (
                     <div 
                         key={region} 
-                        className="absolute bg-white/95 backdrop-blur shadow-sm border border-gray-100 rounded-xl p-3 flex gap-3 items-center"
-                        style={{ top: pos.top, left: pos.left, transform: 'translate(-50%, -50%)', minWidth: '160px' }}
+                        className="absolute bg-white/95 backdrop-blur-xs shadow-sm hover:shadow-md border border-gray-100 rounded-xl p-2.5 sm:p-3 flex gap-2.5 sm:gap-3 items-center z-10 hover:z-20 transition-all select-none"
+                        style={{ top: pos.top, left: pos.left, transform: 'translate(-50%, -50%)', minWidth: '150px' }}
                     >
-                        <div className="w-10 h-10 rounded-full bg-corporate-dark text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-inner">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-corporate-dark text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-inner">
                             {stat.pct}%
                         </div>
                         <div className="flex-1">
-                            <h4 className="font-bold text-gray-800 text-sm mb-1">{region === 'Non' ? 'Non / Lainnya' : region}</h4>
-                            <div className="space-y-1 text-xs">
-                                <div className="flex justify-between items-center">
+                            <h4 className="font-bold text-gray-800 text-xs sm:text-sm mb-1">{region === 'Non' ? 'Non / Lainnya' : region}</h4>
+                            <div className="space-y-0.5 sm:space-y-1 text-[11px] sm:text-xs">
+                                <div className="flex justify-between items-center gap-2">
                                     <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-corporate-dark"></div> Estate</span>
                                     <span className="font-semibold text-gray-700">{formatNumber(stat.Estate)}</span>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-green-500"></div> Mill</span>
+                                <div className="flex justify-between items-center gap-2">
+                                    <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-corporate-light"></div> Mill</span>
                                     <span className="font-semibold text-gray-700">{formatNumber(stat.Mill)}</span>
                                 </div>
-                                <div className="flex justify-between items-center">
+                                <div className="flex justify-between items-center gap-2">
                                     <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-500"></div> HO</span>
                                     <span className="font-semibold text-gray-700">{formatNumber(stat.HO)}</span>
                                 </div>

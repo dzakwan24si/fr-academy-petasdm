@@ -8,7 +8,7 @@ import { StackedBar } from '@/Components/charts/StackedBar';
 import { HorizontalBar } from '@/Components/charts/HorizontalBar';
 import { LineTrend } from '@/Components/charts/LineTrend';
 import { RegionalMapWidget } from '@/Components/charts/RegionalMapWidget';
-import { generationColors } from '@/lib/colors';
+import { generationColors, facilityColors } from '@/lib/colors';
 import { formatNumber } from '@/lib/format';
 import { InfoTooltip } from '@/Components/ui/InfoTooltip';
 import { UserPlus, UserCheck } from 'lucide-react';
@@ -52,9 +52,9 @@ export default function Dashboard({ metrics, insight }) {
         .slice(0, 10) : [];
         
     const facilityData = hasData ? [
-        { name: 'Estate', value: Object.values(metrics.hc_by_region_facility || {}).reduce((s, r) => s + (r.Estate || 0), 0), fill: '#111827' },
-        { name: 'Mill', value: Object.values(metrics.hc_by_region_facility || {}).reduce((s, r) => s + (r.Mill || 0), 0), fill: '#22c55e' },
-        { name: 'HO', value: Object.values(metrics.hc_by_region_facility || {}).reduce((s, r) => s + (r.HO || 0), 0), fill: '#f59e0b' },
+        { name: 'Estate', value: Object.values(metrics.hc_by_region_facility || {}).reduce((s, r) => s + (r.Estate || 0), 0), fill: facilityColors.Estate },
+        { name: 'Mill', value: Object.values(metrics.hc_by_region_facility || {}).reduce((s, r) => s + (r.Mill || 0), 0), fill: facilityColors.Mill },
+        { name: 'HO', value: Object.values(metrics.hc_by_region_facility || {}).reduce((s, r) => s + (r.HO || 0), 0), fill: facilityColors.HO },
     ] : [];
         
     const trainingTrendData = hasData && metrics.training?.trend ? Object.entries(metrics.training.trend).map(([my, val]) => ({
@@ -139,7 +139,7 @@ export default function Dashboard({ metrics, insight }) {
                                 <div className="w-full lg:w-72 shrink-0 border-t lg:border-t-0 lg:border-l border-gray-100 pt-6 lg:pt-0 lg:pl-6 flex flex-col">
                                     <h3 className="text-sm font-bold text-gray-900 mb-4">Total per Operasional</h3>
                                     <div className="flex-1 min-h-[250px]">
-                                        {hasData && <DonutChart data={facilityData} dataKey="value" />}
+                                        {hasData && <DonutChart data={facilityData} dataKey="value" hideLegend={true} unit="karyawan" />}
                                     </div>
                                     <div className="mt-4 space-y-2 text-xs">
                                         {facilityData.map(item => (

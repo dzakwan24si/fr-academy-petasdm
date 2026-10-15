@@ -66,9 +66,12 @@ class TrainingMetrics
             $totalDays += $t->days;
             $uniqueTrainings[$t->training_name] = true;
 
-            if ($t->employee_id) {
-                $uniqueParticipants[$t->employee_id] = true;
-            } else {
+            $participantKey = $t->employee_id ?: ($t->nik ?: ($t->nik_raw ?: $t->participant_name));
+            if ($participantKey) {
+                $uniqueParticipants[$participantKey] = true;
+            }
+
+            if (! $t->employee_id) {
                 $unlinkedRows++;
             }
 
@@ -80,8 +83,8 @@ class TrainingMetrics
                 if (! isset($participantsTrend[$my])) {
                     $participantsTrend[$my] = [];
                 }
-                if ($t->employee_id) {
-                    $participantsTrend[$my][$t->employee_id] = true;
+                if ($participantKey) {
+                    $participantsTrend[$my][$participantKey] = true;
                 }
             }
 
