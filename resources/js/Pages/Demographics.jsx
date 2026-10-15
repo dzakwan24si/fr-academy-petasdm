@@ -158,7 +158,7 @@ export default function Demographics({ metrics }) {
                         {/* Section 3: Generations & Dept Age */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <ChartCard title="Generasi × Region (Heatmap)">
-                                <Heatmap data={heatmapData} xLabels={genNames} yLabels={regionNames} />
+                                <Heatmap data={heatmapData} xLabels={genNames} yLabels={regionNames} expandable={false} title="Heatmap Generasi × Region" />
                             </ChartCard>
                             <ChartCard title="Rata-rata Umur per Departemen (Top 15, HC >= 5)">
                                 <HorizontalBar data={avgAgeDeptData} color={defaultPalette[2]} />

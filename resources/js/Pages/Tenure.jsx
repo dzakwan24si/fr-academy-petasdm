@@ -11,6 +11,7 @@ import { defaultPalette } from '@/lib/colors';
 import { formatNumber } from '@/lib/format';
 import { useState } from 'react';
 import { useCrossFilter } from '@/hooks/useCrossFilter';
+import { Calendar, TrendingUp, Users } from 'lucide-react';
 
 function TenureSkeleton() {
     return (
@@ -25,7 +26,7 @@ function TenureSkeleton() {
 }
 
 export default function Tenure({ metrics }) {
-    const { toggleFilter } = useCrossFilter();
+    const { toggleFilter, hasFilter } = useCrossFilter();
     const hasData = metrics && metrics.histogram && Object.keys(metrics.histogram).length > 0;
     const [trendType, setTrendType] = useState('yearly');
 
@@ -57,6 +58,16 @@ export default function Tenure({ metrics }) {
 
     const scatterData = hasData ? metrics.scatter : [];
     const wavesData = hasData ? metrics.waves : [];
+
+    const maxWaveTotal = hasData && wavesData.length > 0 
+        ? Math.max(...wavesData.map(w => w.total), 1) 
+        : 1;
+    const totalWaveHC = hasData && wavesData.length > 0
+        ? wavesData.reduce((acc, w) => acc + w.total, 0)
+        : 0;
+    const peakWave = hasData && wavesData.length > 0
+        ? wavesData.reduce((max, w) => (w.total > (max?.total || 0) ? w : max), null)
+        : null;
 
     return (
         <AppLayout title="Masa Kerja & Rekrutmen">
@@ -124,31 +135,123 @@ export default function Tenure({ metrics }) {
                             </ChartCard>
                         </div>
 
+                        {/* Section: Gelombang Rekrutmen (Top 15 Tahun) - Cohort Cards */}
                         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                            <h3 className="font-bold text-gray-800 mb-4">Gelombang Rekrutmen (Top 15 Tahun)</h3>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm text-left">
-                                    <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
-                                        <tr>
-                                            <th className="px-4 py-3 rounded-tl-lg">Tahun Join</th>
-                                            <th className="px-4 py-3 text-right">Headcount Masuk</th>
-                                            <th className="px-4 py-3 rounded-tr-lg">Tipe Karyawan Dominan</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {wavesData.map(row => (
-                                            <tr key={row.year} className="hover:bg-gray-50 transition-colors">
-                                                <td className="px-4 py-3 font-medium text-gray-900">{row.year}</td>
-                                                <td className="px-4 py-3 text-right">{formatNumber(row.total)}</td>
-                                                <td className="px-4 py-3">
-                                                    <span className="px-2 py-1 text-xs rounded-full bg-blue-50 text-blue-700 font-medium border border-blue-100">
-                                                        {row.dominant_type}
+                            {/* Header Toolbar */}
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 mb-4 border-b border-gray-100">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-2 bg-emerald-50 text-[#004D40] rounded-xl">
+                                        <Calendar className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="font-bold text-gray-900 text-lg">Gelombang Rekrutmen (Top 15 Tahun)</h3>
+                                            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+                                                {wavesData.length} Angkatan
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-0.5">
+                                            Distribusi personil masuk dan status kepegawaian dominan per angkatan (cohort). Klik kartu tahun untuk memfilter dashboard.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Summary KPI Pills */}
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-gray-100 text-xs flex items-center gap-1.5 text-gray-700 font-medium">
+                                        <Users size={13} className="text-gray-400" />
+                                        <span>Total:</span>
+                                        <span className="font-bold text-gray-900">{formatNumber(totalWaveHC)} orang</span>
+                                    </div>
+                                    {peakWave && (
+                                        <div className="px-3 py-1.5 rounded-xl bg-amber-50/70 border border-amber-200/60 text-xs flex items-center gap-1.5 text-amber-900 font-medium">
+                                            <TrendingUp size={13} className="text-amber-600" />
+                                            <span>Puncak:</span>
+                                            <span className="font-bold text-amber-950">Tahun {peakWave.year} ({formatNumber(peakWave.total)} org)</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Cohort Cards Grid */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+                                {wavesData.map((row) => {
+                                    const isPeak = peakWave && row.year === peakWave.year;
+                                    const pct = Math.round((row.total / maxWaveTotal) * 100);
+                                    const isSelected = hasFilter ? hasFilter('year', row.year) : false;
+                                    const isProbation = row.dominant_type === 'PROBATION';
+                                    const isPermanent = row.dominant_type === 'PERMANENT';
+
+                                    const typesBreakdown = row.types 
+                                        ? Object.entries(row.types).map(([t, c]) => `${t}: ${c}`).join(', ') 
+                                        : row.dominant_type;
+
+                                    return (
+                                        <div
+                                            key={row.year}
+                                            onClick={() => toggleFilter('year', row.year)}
+                                            className={`group relative p-4 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between ${
+                                                isSelected
+                                                    ? 'bg-emerald-50/80 border-emerald-500 shadow-sm ring-2 ring-emerald-500/20'
+                                                    : 'bg-white hover:bg-slate-50/70 border-gray-200/70 hover:border-emerald-300 shadow-2xs hover:shadow-sm'
+                                            }`}
+                                            title={`Tahun ${row.year}: ${formatNumber(row.total)} orang (${typesBreakdown}). Klik untuk filter.`}
+                                        >
+                                            {/* Top row: Year & Badge */}
+                                            <div className="flex items-center justify-between gap-1.5 mb-2">
+                                                <span className="font-bold text-gray-900 text-base group-hover:text-emerald-700 transition-colors">
+                                                    {row.year}
+                                                </span>
+                                                {isPeak ? (
+                                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/60 inline-flex items-center gap-0.5 shrink-0">
+                                                        <TrendingUp size={10} /> Terbanyak
                                                     </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                                ) : isSelected ? (
+                                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 shrink-0">
+                                                        Terpilih
+                                                    </span>
+                                                ) : null}
+                                            </div>
+
+                                            {/* Middle: Headcount number + Mini visual bar */}
+                                            <div className="my-1.5">
+                                                <div className="flex items-baseline gap-1">
+                                                    <span className="text-2xl font-black text-gray-900 group-hover:text-emerald-950 transition-colors tracking-tight">
+                                                        {formatNumber(row.total)}
+                                                    </span>
+                                                    <span className="text-xs text-gray-500 font-medium">orang</span>
+                                                </div>
+
+                                                <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2.5 overflow-hidden">
+                                                    <div 
+                                                        className={`h-full rounded-full transition-all duration-500 ${
+                                                            isPeak 
+                                                                ? 'bg-gradient-to-r from-amber-500 to-emerald-600' 
+                                                                : isSelected 
+                                                                    ? 'bg-[#004D40]' 
+                                                                    : 'bg-emerald-600/70 group-hover:bg-[#004D40]'
+                                                        }`}
+                                                        style={{ width: `${Math.max(pct, 8)}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Bottom: Dominant type badge */}
+                                            <div className="pt-2.5 mt-2 border-t border-gray-100 flex items-center justify-between gap-1">
+                                                <span className="text-[11px] text-gray-400 font-normal">Dominan:</span>
+                                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border truncate max-w-[120px] ${
+                                                    isProbation 
+                                                        ? 'bg-amber-50 text-amber-800 border-amber-200/60'
+                                                        : isPermanent 
+                                                            ? 'bg-blue-50 text-blue-700 border-blue-200/60'
+                                                            : 'bg-gray-50 text-gray-700 border-gray-200'
+                                                }`}>
+                                                    {row.dominant_type}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                         

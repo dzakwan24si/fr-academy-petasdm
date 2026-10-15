@@ -9,12 +9,14 @@ export function Heatmap({
     yLabels = [], 
     valueKey = 'value', 
     tooltipKey = 'label',
-    title = 'Heatmap (Tahun × Region)',
-    expandable = true 
+    title = 'Heatmap',
+    yTitle = 'Region',
+    expandable = 'auto' 
 }) {
     if (!data || data.length === 0 || !xLabels.length || !yLabels.length) return null;
 
     const [modalOpen, setModalOpen] = useState(false);
+    const shouldShowExpand = expandable === true || (expandable === 'auto' && xLabels.length > 6);
 
     // Escape key listener to close modal
     useEffect(() => {
@@ -66,12 +68,12 @@ export function Heatmap({
                 <div className="min-w-max pb-2">
                     {/* Header Row (Years) */}
                     <div className="flex sticky top-0 bg-white z-20 pb-1.5 pt-1 border-b border-gray-200">
-                        {/* Pinned Top-Left Corner (Region Header) */}
+                        {/* Pinned Top-Left Corner (Row Header) */}
                         <div className={`${labelWidthClass} shrink-0 sticky left-0 bg-white z-30 font-bold text-gray-500 text-[11px] uppercase tracking-wider flex items-center justify-end pr-3 border-r border-gray-200`}>
-                            <span>Region</span>
+                            <span>{yTitle}</span>
                         </div>
                         {xLabels.map(x => (
-                            <div key={x} className={`${cellWidthClass} shrink-0 text-center py-1.5 font-bold text-gray-700 ${fontSizeClass} truncate px-0.5`} title={`Tahun ${x}`}>
+                            <div key={x} className={`${cellWidthClass} shrink-0 text-center py-1.5 font-bold text-gray-700 ${fontSizeClass} truncate px-0.5`} title={String(x)}>
                                 {x}
                             </div>
                         ))}
@@ -118,7 +120,7 @@ export function Heatmap({
             {renderMatrix(false)}
 
             {/* Expand / Enlarge Button Below Chart */}
-            {expandable && (
+            {shouldShowExpand && (
                 <button
                     type="button"
                     onClick={() => setModalOpen(true)}
@@ -150,7 +152,7 @@ export function Heatmap({
                                     <span>{title}</span>
                                 </h3>
                                 <p className="text-xs text-gray-500 mt-0.5">
-                                    Geser secara horizontal untuk melihat seluruh rentang tahun. Nama region tetap terkunci di sebelah kiri.
+                                    Geser secara horizontal untuk melihat seluruh rentang data. Nama {yTitle.toLowerCase()} tetap terkunci di sebelah kiri.
                                 </p>
                             </div>
                             <button

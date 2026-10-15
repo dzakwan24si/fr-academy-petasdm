@@ -2,20 +2,20 @@
 
 namespace App\Services;
 
-use Illuminate\Http\Request;
+use App\Models\Employee;
 use App\Support\EmployeeFilter;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class TenureMetrics
 {
     public function getMetrics(Request $request, EmployeeFilter $filter)
     {
-        $query = \App\Models\Employee::query();
+        $query = Employee::query();
         $query = $filter->apply($query, $request);
 
         $employees = $query->get([
-            'birth_date', 'join_date', 'region', 'job_level_code', 'employment_type'
+            'birth_date', 'join_date', 'region', 'job_level_code', 'employment_type',
         ]);
 
         if ($employees->isEmpty()) {
@@ -38,44 +38,52 @@ class TenureMetrics
 
         $tenureByLevelSum = [];
         $tenureByRegionSum = [];
-        
+
         $scatter = [];
         $heatmap = [];
-        
+
         $waves = [];
 
         foreach ($employees as $e) {
-            if (!$e->join_date || !$e->birth_date) continue;
+            if (! $e->join_date || ! $e->birth_date) {
+                continue;
+            }
 
             $join = Carbon::parse($e->join_date);
             $birth = Carbon::parse($e->birth_date);
-            
+
             $ageFloat = $birth->diffInMonths($asOf) / 12;
             $tenureFloat = $join->diffInMonths($asOf) / 12;
 
-            if ($tenureFloat < 1) $histogram['<1 tahun']++;
-            elseif ($tenureFloat < 3) $histogram['1-<3 tahun']++;
-            elseif ($tenureFloat < 5) $histogram['3-<5 tahun']++;
-            elseif ($tenureFloat < 10) $histogram['5-<10 tahun']++;
-            else $histogram['10+ tahun']++;
+            if ($tenureFloat < 1) {
+                $histogram['<1 tahun']++;
+            } elseif ($tenureFloat < 3) {
+                $histogram['1-<3 tahun']++;
+            } elseif ($tenureFloat < 5) {
+                $histogram['3-<5 tahun']++;
+            } elseif ($tenureFloat < 10) {
+                $histogram['5-<10 tahun']++;
+            } else {
+                $histogram['10+ tahun']++;
+            }
 
             $jYear = $join->year;
             $joinYearly[$jYear] = ($joinYearly[$jYear] ?? 0) + 1;
-            
+
             if ($jYear >= $yearLimit && $jYear <= $asOf->year) {
                 $my = $join->format('Y-m');
                 $joinMonthly[$my] = ($joinMonthly[$my] ?? 0) + 1;
             }
 
             $lvl = $e->job_level_code ?? 'Unknown';
-            if (!isset($tenureByLevelSum[$lvl])) {
+            if (! isset($tenureByLevelSum[$lvl])) {
                 $tenureByLevelSum[$lvl] = ['sum' => 0, 'count' => 0];
             }
             $tenureByLevelSum[$lvl]['sum'] += $tenureFloat;
             $tenureByLevelSum[$lvl]['count']++;
 
             $reg = $e->region ?? 'Unknown';
-            if (!isset($tenureByRegionSum[$reg])) {
+            if (! isset($tenureByRegionSum[$reg])) {
                 $tenureByRegionSum[$reg] = ['sum' => 0, 'count' => 0];
             }
             $tenureByRegionSum[$reg]['sum'] += $tenureFloat;
@@ -83,20 +91,20 @@ class TenureMetrics
 
             $joinAge = $birth->diffInMonths($join) / 12;
             $isAnomaly = ($joinAge < 18 || $joinAge > 55) ? 'yes' : 'no';
-            
+
             $scatter[] = [
                 'umur' => round($ageFloat, 1),
                 'masa_kerja' => round($tenureFloat, 1),
                 'anomali' => $isAnomaly,
-                'join_age' => round($joinAge, 1)
+                'join_age' => round($joinAge, 1),
             ];
 
-            if (!isset($heatmap[$jYear])) {
+            if (! isset($heatmap[$jYear])) {
                 $heatmap[$jYear] = [];
             }
             $heatmap[$jYear][$reg] = ($heatmap[$jYear][$reg] ?? 0) + 1;
 
-            if (!isset($waves[$jYear])) {
+            if (! isset($waves[$jYear])) {
                 $waves[$jYear] = ['total' => 0, 'types' => []];
             }
             $waves[$jYear]['total']++;
@@ -107,7 +115,7 @@ class TenureMetrics
         ksort($joinYearly);
         ksort($joinMonthly);
 
-        $levelOrder = ['A','B','C','D','E','F','1','2','3','4','5'];
+        $levelOrder = ['A', 'B', 'C', 'D', 'E', 'F', '1', '2', '3', '4', '5'];
         $avgByLevel = [];
         foreach ($levelOrder as $lvl) {
             if (isset($tenureByLevelSum[$lvl])) {
@@ -115,7 +123,7 @@ class TenureMetrics
             }
         }
         foreach ($tenureByLevelSum as $lvl => $data) {
-            if (!in_array($lvl, $levelOrder)) {
+            if (! in_array($lvl, $levelOrder)) {
                 $avgByLevel[$lvl] = round($data['sum'] / $data['count'], 1);
             }
         }
@@ -134,28 +142,29 @@ class TenureMetrics
             $recruitmentWaves[] = [
                 'year' => (string) $year,
                 'total' => $data['total'],
-                'dominant_type' => $dominant
+                'dominant_type' => $dominant,
+                'types' => $data['types'],
             ];
         }
 
         ksort($heatmap);
-        
+
         return [
             'histogram' => $histogram,
             'trend' => [
                 'yearly' => $joinYearly,
-                'monthly' => $joinMonthly
+                'monthly' => $joinMonthly,
             ],
             'average' => [
                 'level' => $avgByLevel,
-                'region' => $avgByRegion
+                'region' => $avgByRegion,
             ],
             'scatter' => $scatter,
             'heatmap' => $heatmap,
-            'waves' => array_slice($recruitmentWaves, 0, 15)
+            'waves' => array_slice($recruitmentWaves, 0, 15),
         ];
     }
-    
+
     private function emptyMetrics()
     {
         return [
@@ -164,7 +173,7 @@ class TenureMetrics
             'average' => ['level' => [], 'region' => []],
             'scatter' => [],
             'heatmap' => [],
-            'waves' => []
+            'waves' => [],
         ];
     }
 }

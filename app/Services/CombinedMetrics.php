@@ -21,7 +21,7 @@ class CombinedMetrics
 
         $employees = $query->get([
             'id', 'employee_id', 'region', 'company_id', 'organization_name', 'job_level_code',
-            'birth_date', 'join_date', 'gender',
+            'job_title_name', 'birth_date', 'join_date', 'gender',
         ]);
 
         $totalEmployees = $employees->count();
@@ -59,6 +59,7 @@ class CombinedMetrics
         $covDept = [];
         $covLevel = [];
         $titlesByLevel = [];
+        $jobTitlesTable = [];
 
         $hrsGen = [];
         $hrsLevel = [];
@@ -83,9 +84,28 @@ class CombinedMetrics
             $dept = $e->organization_name ?? 'Unknown';
             $lvl = $e->job_level_code ?? 'Unknown';
             $gender = $e->gender ?? 'Unknown';
+            $jt = $e->job_title_name ? trim($e->job_title_name) : 'Tidak Diketahui';
 
             if ($lvl && $e->job_title_name) {
                 $titlesByLevel[$lvl][$e->job_title_name] = ($titlesByLevel[$lvl][$e->job_title_name] ?? 0) + 1;
+            }
+
+            $lvlStr = ($lvl !== null && $lvl !== '' && $lvl !== 'Unknown') ? (string) $lvl : '-';
+            $jtKey = $jt.'||'.$lvlStr;
+
+            if (! isset($jobTitlesTable[$jtKey])) {
+                $jobTitlesTable[$jtKey] = [
+                    'title' => $jt,
+                    'level' => $lvlStr,
+                    'hc' => 0,
+                    'trained_hc' => 0,
+                    'hours_sum' => 0,
+                ];
+            }
+            $jobTitlesTable[$jtKey]['hc']++;
+            if ($hasTraining) {
+                $jobTitlesTable[$jtKey]['trained_hc']++;
+                $jobTitlesTable[$jtKey]['hours_sum'] += $hours;
             }
 
             if (! isset($covRegion[$reg])) {
@@ -227,10 +247,13 @@ class CombinedMetrics
             $riskPct = $data['hc'] > 0 ? ($data['risk_count'] / $data['hc']) * 100 : 0;
 
             $companyRankTable[] = [
+                'id' => $cid,
                 'name' => $name,
                 'hc' => $data['hc'],
                 'avg_age' => round($avgAge, 1),
+                'trained_hc' => $data['linked_hc'],
                 'coverage' => round($cov, 1),
+                'total_hours' => round($data['hours_sum'], 1),
                 'avg_hours' => round($avgHours, 1),
                 'risk_pct' => round($riskPct, 1),
             ];
@@ -242,6 +265,25 @@ class CombinedMetrics
             $name = $companyNames[$cid] ?? 'Unknown';
             $covCompanyNamed[$name] = $data;
         }
+
+        $jobTitlesRanking = [];
+        foreach ($jobTitlesTable as $data) {
+            $covPct = $data['hc'] > 0 ? ($data['trained_hc'] / $data['hc']) * 100 : 0;
+            $avgHours = $data['trained_hc'] > 0 ? ($data['hours_sum'] / $data['trained_hc']) : 0;
+            $pctOfTotal = $totalEmployees > 0 ? ($data['hc'] / $totalEmployees) * 100 : 0;
+
+            $jobTitlesRanking[] = [
+                'title' => $data['title'],
+                'level' => $data['level'],
+                'hc' => $data['hc'],
+                'pct_of_total' => round($pctOfTotal, 2),
+                'trained_hc' => $data['trained_hc'],
+                'coverage' => round($covPct, 1),
+                'total_hours' => round($data['hours_sum'], 1),
+                'avg_hours' => round($avgHours, 1),
+            ];
+        }
+        usort($jobTitlesRanking, fn ($a, $b) => $b['hc'] <=> $a['hc']);
 
         return [
             'banner' => $banner,
@@ -260,11 +302,21 @@ class CombinedMetrics
             'new_hire_no_training' => $newHireNoTrainingCount,
             'scatter' => $scatter,
             'company_ranking' => $companyRankTable,
+            'job_titles_ranking' => $jobTitlesRanking,
         ];
     }
 
     private function emptyMetrics()
     {
-        return [];
+        return [
+            'banner' => null,
+            'coverage' => ['region' => [], 'company' => [], 'dept' => [], 'level' => []],
+            'hours' => ['generation' => [], 'level' => [], 'gender' => []],
+            'retirement_training' => ['0_jam' => 0, '1_15_jam' => 0, '16_plus_jam' => 0],
+            'new_hire_no_training' => 0,
+            'scatter' => [],
+            'company_ranking' => [],
+            'job_titles_ranking' => [],
+        ];
     }
 }
