@@ -89,7 +89,7 @@ export default function Training({ metrics, filters }) {
                         )}
 
                         {/* KPIs */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                             <KpiCard 
                                 title="Total Baris" 
                                 value={kpi.total_rows} 
@@ -467,7 +467,7 @@ function TrainingTable({ filters }) {
                         Menampilkan <span className="font-semibold text-gray-900">{meta.from}</span> - <span className="font-semibold text-gray-900">{meta.to}</span> dari <span className="font-semibold text-gray-900">{meta.total?.toLocaleString('id-ID')}</span> pelatihan
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center flex-wrap justify-center sm:justify-end gap-1">
                         <button 
                             type="button"
                             disabled={page === 1 || loading}

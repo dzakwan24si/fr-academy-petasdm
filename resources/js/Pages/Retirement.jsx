@@ -15,7 +15,7 @@ import { useFilters } from '@/hooks/useFilters';
 function RetirementSkeleton() {
     return (
         <div className="space-y-6 animate-pulse">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
                 {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-gray-200 rounded-xl"></div>)}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -98,7 +98,7 @@ export default function Retirement({ metrics }) {
                 {hasData ? (
                     <div className="space-y-6 animate-in fade-in duration-500 mt-6">
                         
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
                             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                                 <p className="text-sm font-medium text-gray-500">Berisiko Sekarang</p>
                                 <p className="text-2xl font-bold text-gray-900 mt-1">{formatNumber(metrics.kpi.now)}</p>

@@ -2,16 +2,18 @@
 
 namespace App\Exports;
 
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\Query\Builder;
+use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\Exportable;
-use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
-use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
 use PhpOffice\PhpSpreadsheet\Cell\Cell;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
 
-class TrainingRecordsExport extends DefaultValueBinder implements FromQuery, WithHeadings, WithMapping, WithCustomValueBinder
+class TrainingRecordsExport extends DefaultValueBinder implements FromQuery, WithCustomValueBinder, WithHeadings, WithMapping
 {
     use Exportable;
 
@@ -22,7 +24,7 @@ class TrainingRecordsExport extends DefaultValueBinder implements FromQuery, Wit
         $this->query = $query;
     }
 
-    public function query(): \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Eloquent\Relations\Relation
+    public function query(): Builder|\Illuminate\Database\Eloquent\Builder|Relation
     {
         return $this->query;
     }
@@ -91,6 +93,7 @@ class TrainingRecordsExport extends DefaultValueBinder implements FromQuery, Wit
         // Force these code columns to be explicit strings to prevent scientific notation (NIK & NIK Mentah)
         if (in_array($column, ['B', 'C'])) {
             $cell->setValueExplicit($value, DataType::TYPE_STRING);
+
             return true;
         }
 

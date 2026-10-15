@@ -248,7 +248,7 @@ export default function TrainingData({ records, filters }) {
                     <div className="text-sm text-gray-500">
                         Menampilkan <span className="font-semibold text-gray-900">{records.from || 0}</span> - <span className="font-semibold text-gray-900">{records.to || 0}</span> dari <span className="font-semibold text-gray-900">{records.total?.toLocaleString('id-ID')}</span> data
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center flex-wrap justify-center sm:justify-end gap-1">
                         {records.links.map((link, i) => {
                             const isPrev = String(link.label).toLowerCase().includes('previous');
                             const isNext = String(link.label).toLowerCase().includes('next');

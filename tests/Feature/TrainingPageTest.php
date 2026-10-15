@@ -2,10 +2,9 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Tests\TestCase;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class TrainingPageTest extends TestCase
 {
@@ -17,7 +16,7 @@ class TrainingPageTest extends TestCase
         $response = $this->actingAs($user)->get('/pelatihan');
         $response->assertStatus(200);
     }
-    
+
     public function test_demografi_page_loads()
     {
         $user = User::factory()->create();

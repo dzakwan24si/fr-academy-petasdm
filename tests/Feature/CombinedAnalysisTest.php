@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use App\Models\Employee;
-use Illuminate\Support\Facades\DB;
 use App\Services\CombinedMetrics;
-use Illuminate\Http\Request;
 use App\Support\EmployeeFilter;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Tests\TestCase;
 
 class CombinedAnalysisTest extends TestCase
 {
@@ -34,7 +34,7 @@ class CombinedAnalysisTest extends TestCase
             'job_level_code' => 'A',
             'birth_date' => '1990-01-01',
             'join_date' => '2020-01-01',
-            'gender' => 'Male'
+            'gender' => 'Male',
         ]);
         $emp = Employee::first();
 
@@ -47,14 +47,14 @@ class CombinedAnalysisTest extends TestCase
             'year' => 2026,
             'month' => 1,
             'days' => 1,
-            'training_name' => 'Test Training'
+            'training_name' => 'Test Training',
         ]);
 
         // Calculate metrics
-        $service = new CombinedMetrics();
-        $request = new Request();
-        $filter = new EmployeeFilter();
-        
+        $service = new CombinedMetrics;
+        $request = new Request;
+        $filter = new EmployeeFilter;
+
         $metricsBefore = $service->getMetrics($request, $filter);
 
         // Verify some initial metrics
@@ -74,7 +74,7 @@ class CombinedAnalysisTest extends TestCase
                 'year' => 2026,
                 'month' => 1,
                 'days' => 1,
-                'training_name' => 'Unlinked Training'
+                'training_name' => 'Unlinked Training',
             ]);
         }
 

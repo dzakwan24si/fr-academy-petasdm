@@ -2,19 +2,19 @@
 
 namespace App\Services\Import;
 
+use App\Imports\GenericImport;
 use App\Models\ImportBatch;
 use App\Support\Clean;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 use RuntimeException;
 use Throwable;
-
-use Illuminate\Http\UploadedFile;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Imports\GenericImport;
 
 class EmployeeImporter
 {
     private array $companiesCache = [];
+
     private array $locationsCache = [];
 
     public function import(UploadedFile $file, ?int $userId = null): ImportBatch
@@ -27,7 +27,7 @@ class EmployeeImporter
             'started_at' => now(),
         ]);
 
-        $report = new ImportReport();
+        $report = new ImportReport;
 
         try {
             DB::transaction(function () use ($file, $report) {
@@ -66,16 +66,16 @@ class EmployeeImporter
     {
         $data = Excel::toArray(new GenericImport, $file);
         if (empty($data) || empty($data[0])) {
-            throw new RuntimeException("File kosong atau tidak dapat dibaca");
+            throw new RuntimeException('File kosong atau tidak dapat dibaca');
         }
-        
+
         $rows = $data[0];
-        $header = array_map('trim', array_filter((array) $rows[0], fn($v) => $v !== null));
+        $header = array_map('trim', array_filter((array) $rows[0], fn ($v) => $v !== null));
         $expectedHeader = ['Employee ID', 'Employee Name', 'Join Date', 'Employment Type', 'Job Level Code', 'Job Title Code', 'Job Title Name', 'Organization Code', 'Organization Name', 'Location Code', 'Location Name', 'Company Code', 'Company Name', 'Birth Date', 'Birth Place', 'Gender', 'Marital Status', 'Religion', 'PTKP Code', 'PTKP Name', 'Group', 'Region'];
-        
+
         $missing = array_diff($expectedHeader, $header);
         if ($missing) {
-            throw new RuntimeException('Kolom hilang: ' . implode(', ', $missing));
+            throw new RuntimeException('Kolom hilang: '.implode(', ', $missing));
         }
 
         $count = count($header);
@@ -86,15 +86,15 @@ class EmployeeImporter
         // Mulai dari baris ke-2 (index 1)
         for ($i = 1; $i < count($rows); $i++) {
             $r = $rows[$i];
-            
+
             // Skip baris kosong
-            if (empty(array_filter($r, fn($val) => $val !== null && $val !== ''))) {
+            if (empty(array_filter($r, fn ($val) => $val !== null && $val !== ''))) {
                 continue;
             }
-            
+
             $r = array_pad($r, $count, null);
             $row = array_combine($header, array_slice($r, 0, $count));
-            
+
             $report->totalRows++;
             $employeeId = trim((string) $row['Employee ID']);
             if ($employeeId !== '') {
@@ -105,7 +105,7 @@ class EmployeeImporter
 
         $missing = array_diff($existingEmpIds, $importedEmpIds);
         if ($missing) {
-            $report->addWarning('missing_from_file', 'Karyawan ada di DB tapi tidak ada di file baru', count($missing) . ' karyawan, misal: ' . implode(', ', array_slice($missing, 0, 5)));
+            $report->addWarning('missing_from_file', 'Karyawan ada di DB tapi tidak ada di file baru', count($missing).' karyawan, misal: '.implode(', ', array_slice($missing, 0, 5)));
         }
     }
 
@@ -113,15 +113,16 @@ class EmployeeImporter
     {
         $now = now();
         $employeeId = trim((string) $r['Employee ID']);
-        
+
         if ($employeeId === '') {
             $report->skippedRows++;
             $report->addWarning('missing_employee_id', 'Baris tanpa Employee ID');
+
             return;
         }
 
         $companyCode = trim((string) $r['Company Code']);
-        if (!isset($this->companiesCache[$companyCode])) {
+        if (! isset($this->companiesCache[$companyCode])) {
             $id = DB::table('companies')->insertGetId([
                 'code' => $companyCode,
                 'name' => trim((string) $r['Company Name']),
@@ -142,7 +143,7 @@ class EmployeeImporter
         $companyId = $this->companiesCache[$companyCode];
 
         $locationCode = trim((string) $r['Location Code']);
-        if (!isset($this->locationsCache[$locationCode])) {
+        if (! isset($this->locationsCache[$locationCode])) {
             $id = DB::table('locations')->insertGetId([
                 'code' => $locationCode,
                 'name' => trim((string) $r['Location Name']),
@@ -161,7 +162,7 @@ class EmployeeImporter
         $birth = Clean::birth($r['Birth Date']);
         $join = Clean::join($r['Join Date']);
 
-        if (!$birth || !$join || $join->lt($birth->copy()->addYears(15)) || $join->isFuture()) {
+        if (! $birth || ! $join || $join->lt($birth->copy()->addYears(15)) || $join->isFuture()) {
             $report->addWarning('suspicious_dates', 'Tanggal lahir/masuk mencurigakan', "Employee ID: $employeeId");
         }
 
@@ -190,7 +191,7 @@ class EmployeeImporter
                 'updated_at' => $now,
             ]
         );
-        
+
         $report->importedRows++;
     }
 }

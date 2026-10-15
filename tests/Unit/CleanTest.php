@@ -14,7 +14,7 @@ class CleanTest extends TestCase
 
         $d = Clean::date2('04-Dec-99', 15);
         $this->assertEquals('1999-12-04', $d->format('Y-m-d'));
-        
+
         $this->assertNull(Clean::date2('', 15));
         $this->assertNull(Clean::date2('invalid', 15));
     }

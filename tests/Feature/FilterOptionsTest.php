@@ -22,10 +22,10 @@ class FilterOptionsTest extends TestCase
                 'trainingRegions',
                 'groups',
                 'companies' => [
-                    '*' => ['id', 'code', 'name']
+                    '*' => ['id', 'code', 'name'],
                 ],
                 'locations' => [
-                    '*' => ['id', 'name', 'companies']
+                    '*' => ['id', 'name', 'companies'],
                 ],
                 'departments',
                 'jobLevels',

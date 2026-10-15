@@ -80,7 +80,7 @@ class DataController extends Controller
         }
 
         $females = $employees->where('gender', 'Female')->count();
-        $perm = $employees->where('employment_type', 'PERM')->count();
+        $perm = $employees->filter(fn ($e) => in_array($e->employment_type, ['PERM', 'PERMANENT'], true))->count();
 
         // Untuk umur dan masa kerja, ambil yg valid saja
         $ages = $employees->map(fn ($e) => Demographics::age(Carbon::parse($e->birth_date)))->filter();

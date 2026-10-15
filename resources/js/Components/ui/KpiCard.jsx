@@ -81,7 +81,7 @@ export function KpiCard({ title, value, unit = '', note = '', highlight = false,
     const iconBgClass = needsAttention ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-[#40826D]';
 
     return (
-        <div className={`bg-white p-4 rounded-xl shadow-[0_4px_20px_rgba(6,78,59,0.08)] ${borderClass} transition-all duration-300 [@media(hover:hover)]:hover:shadow-[0_8px_30px_rgba(6,78,59,0.12)] [@media(hover:hover)]:hover:-translate-y-1 flex flex-col justify-between h-full relative hover:z-40 focus-within:z-40 group`}>
+        <div className={`bg-white p-3.5 sm:p-4 rounded-xl shadow-[0_4px_20px_rgba(6,78,59,0.08)] ${borderClass} transition-all duration-300 [@media(hover:hover)]:hover:shadow-[0_8px_30px_rgba(6,78,59,0.12)] [@media(hover:hover)]:hover:-translate-y-1 flex flex-col justify-between h-full relative hover:z-40 focus-within:z-40 group`}>
             {/* Subtle background decoration for highlight (contained so tooltips aren't clipped) */}
             {highlight && (
                 <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
@@ -89,33 +89,33 @@ export function KpiCard({ title, value, unit = '', note = '', highlight = false,
                 </div>
             )}
             
-            <div className="flex justify-between items-start mb-4 relative z-10">
-                <div className="flex items-center gap-1.5 pr-2 min-w-0">
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</h3>
+            <div className="flex justify-between items-start mb-3 sm:mb-4 relative z-10">
+                <div className="flex items-center gap-1.5 pr-1.5 sm:pr-2 min-w-0">
+                    <h3 className="text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider leading-snug">{title}</h3>
                     {resolvedDesc && <InfoTooltip title={title} text={resolvedDesc} />}
                 </div>
-                <div className={`p-2.5 rounded-full flex-shrink-0 ${iconBgClass}`}>
-                    <Icon size={22} strokeWidth={2.5} />
+                <div className={`p-2 sm:p-2.5 rounded-full flex-shrink-0 ${iconBgClass}`}>
+                    <Icon size={20} className="sm:w-[22px] sm:h-[22px]" strokeWidth={2.5} />
                 </div>
             </div>
             
             <div className="relative">
                 <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold tracking-tight text-gray-900">
+                    <span className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
                         {displayValue}
                     </span>
-                    {unit && <span className="text-sm font-semibold text-gray-400 ml-1">{unit}</span>}
+                    {unit && <span className="text-xs sm:text-sm font-semibold text-gray-400 ml-1">{unit}</span>}
                 </div>
                 
                 {(note || secondaryText) && (
-                    <div className="mt-3 flex flex-wrap gap-2 items-center">
+                    <div className="mt-2.5 sm:mt-3 flex flex-wrap gap-1.5 sm:gap-2 items-center">
                         {note && (
-                            <span className="inline-flex items-center text-[11px] font-medium bg-gray-50 text-gray-500 px-2.5 py-1 rounded-full border border-gray-100">
+                            <span className="inline-flex items-center text-[10px] sm:text-[11px] font-medium bg-gray-50 text-gray-500 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-gray-100">
                                 {note}
                             </span>
                         )}
                         {secondaryText && (
-                            <span className="inline-flex items-center text-[11px] font-medium text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
+                            <span className="inline-flex items-center text-[10px] sm:text-[11px] font-medium text-amber-600 bg-amber-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">
                                 {secondaryText}
                             </span>
                         )}

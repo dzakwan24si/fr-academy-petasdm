@@ -27,7 +27,7 @@ class ImportSdm extends Command
         $empBatch = $empImporter->import($this->argument('employees'));
         $this->info("Employee import completed: {$empBatch->rows_imported} imported, {$empBatch->rows_skipped} skipped out of {$empBatch->rows_total} rows.");
         if ($empBatch->warnings) {
-            $this->warn("Warnings:");
+            $this->warn('Warnings:');
             foreach ($empBatch->warnings as $k => $w) {
                 $this->line("- {$w['message']}: {$w['count']} times");
             }
@@ -37,7 +37,7 @@ class ImportSdm extends Command
         $trainBatch = $trainImporter->import($this->argument('training'));
         $this->info("Training import completed: {$trainBatch->rows_imported} imported, {$trainBatch->rows_skipped} skipped out of {$trainBatch->rows_total} rows.");
         if ($trainBatch->warnings) {
-            $this->warn("Warnings:");
+            $this->warn('Warnings:');
             foreach ($trainBatch->warnings as $k => $w) {
                 $this->line("- {$w['message']}: {$w['count']} times");
             }

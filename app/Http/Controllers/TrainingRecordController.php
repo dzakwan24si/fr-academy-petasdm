@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\TrainingRecordsExport;
+use App\Models\TrainingRecord;
+use App\Services\AuditLogger;
+use App\Support\TrainingFilter;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use App\Models\TrainingRecord;
-use App\Support\TrainingFilter;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\TrainingRecordsExport;
 
 class TrainingRecordController extends Controller
 {
@@ -37,24 +38,24 @@ class TrainingRecordController extends Controller
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('participant_name', 'like', "%{$search}%")
-                  ->orWhere('nik', 'like', "%{$search}%")
-                  ->orWhere('nik_raw', 'like', "%{$search}%")
-                  ->orWhere('training_name', 'like', "%{$search}%")
-                  ->orWhere('company_name_raw', 'like', "%{$search}%");
+                    ->orWhere('nik', 'like', "%{$search}%")
+                    ->orWhere('nik_raw', 'like', "%{$search}%")
+                    ->orWhere('training_name', 'like', "%{$search}%")
+                    ->orWhere('company_name_raw', 'like', "%{$search}%");
             });
         }
 
         // Sorting
         $sortKey = $request->input('sort', 'participant_name');
         $sortOrder = $request->input('order', 'asc');
-        
+
         $allowedSorts = [
-            'nik', 'participant_name', 'company_name_raw', 'department', 
+            'nik', 'participant_name', 'company_name_raw', 'department',
             'work_location', 'group', 'region', 'grade', 'position',
             'month', 'year', 'days', 'hours', 'training_name',
-            'instructor', 'venue', 'regularity', 'source_type', 'level'
+            'instructor', 'venue', 'regularity', 'source_type', 'level',
         ];
-        
+
         if (in_array($sortKey, $allowedSorts)) {
             $query->orderBy($sortKey, $sortOrder);
         } else {
@@ -62,7 +63,7 @@ class TrainingRecordController extends Controller
         }
 
         $perPage = (int) $request->input('per_page', 25);
-        if (!in_array($perPage, [25, 50, 100])) {
+        if (! in_array($perPage, [25, 50, 100])) {
             $perPage = 25;
         }
 
@@ -94,7 +95,7 @@ class TrainingRecordController extends Controller
                 'is_regular' => $t->regularity === 'Reguler' || $t->regularity == 1,
                 'is_internal' => $t->source_type === 'Internal' || $t->source_type == 1,
                 'level' => $t->level,
-                
+
                 // Fields for employee modal if linked
                 'employee' => $t->employee_id ? [
                     'id' => $t->employee->id ?? null,
@@ -123,13 +124,13 @@ class TrainingRecordController extends Controller
             'filters' => $request->all(),
         ]);
     }
-    
+
     public function export(Request $request, TrainingFilter $filter)
     {
         // 5.000 max rows
         $query = TrainingRecord::with(['company']);
         $query = $filter->apply($query, $request);
-        
+
         // Filter NIK Status
         if ($nikStatus = $request->input('nik_status')) {
             if ($nikStatus === 'terhubung') {
@@ -150,21 +151,21 @@ class TrainingRecordController extends Controller
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('participant_name', 'like', "%{$search}%")
-                  ->orWhere('nik', 'like', "%{$search}%")
-                  ->orWhere('nik_raw', 'like', "%{$search}%")
-                  ->orWhere('training_name', 'like', "%{$search}%")
-                  ->orWhere('pt_name', 'like', "%{$search}%");
+                    ->orWhere('nik', 'like', "%{$search}%")
+                    ->orWhere('nik_raw', 'like', "%{$search}%")
+                    ->orWhere('training_name', 'like', "%{$search}%")
+                    ->orWhere('pt_name', 'like', "%{$search}%");
             });
         }
-        
+
         $count = $query->count();
         if ($count > 5000) {
             return back()->with('error', 'Export gagal: Maksimal 5.000 baris per ekspor. Silakan persempit filter.');
         }
-        
-        // Log to AuditLogger
-        \App\Services\AuditLogger::log(auth()->id() ?? 1, 'EXPORT_TRAINING_RECORDS', null, null, ['count' => $count]);
 
-        return Excel::download(new TrainingRecordsExport($query), 'data_training_' . date('Ymd_His') . '.xlsx');
+        // Log to AuditLogger
+        AuditLogger::log(auth()->id() ?? 1, 'EXPORT_TRAINING_RECORDS', null, null, ['count' => $count]);
+
+        return Excel::download(new TrainingRecordsExport($query), 'data_training_'.date('Ymd_His').'.xlsx');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 /**
  * Aturan pembersihan data berdasarkan hasil profiling CSV asli.
@@ -19,7 +20,7 @@ class Clean
 
         if (is_numeric($value)) {
             try {
-                return Carbon::instance(\PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value))->startOfDay();
+                return Carbon::instance(Date::excelToDateTimeObject($value))->startOfDay();
             } catch (\Throwable) {
                 return null;
             }
@@ -67,8 +68,13 @@ class Clean
     public static function region(?string $v): ?string
     {
         $k = strtolower(trim((string) $v));
-        if ($k === '') return null;
-        if ($k === 'kaltim') return 'Kaltim';
+        if ($k === '') {
+            return null;
+        }
+        if ($k === 'kaltim') {
+            return 'Kaltim';
+        }
+
         return ucfirst($k);
     }
 

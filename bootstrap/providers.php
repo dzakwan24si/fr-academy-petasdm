@@ -1,8 +1,9 @@
 <?php
 
 use App\Providers\AppServiceProvider;
+use Maatwebsite\Excel\ExcelServiceProvider;
 
 return [
     AppServiceProvider::class,
-    Maatwebsite\Excel\ExcelServiceProvider::class,
+    ExcelServiceProvider::class,
 ];

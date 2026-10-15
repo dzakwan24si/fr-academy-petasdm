@@ -117,7 +117,7 @@ export function ChartCard({ title, action, description, loading, isEmpty, childr
     const resolvedDesc = resolveChartDescription(title, description);
 
     return (
-        <div ref={cardRef} className={`bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgba(6,78,59,0.08)] border-0 transition-all duration-300 [@media(hover:hover)]:hover:shadow-[0_8px_30px_rgba(6,78,59,0.12)] [@media(hover:hover)]:hover:-translate-y-1 flex flex-col relative hover:z-40 focus-within:z-40 ${className}`}>
+        <div ref={cardRef} className={`bg-white rounded-2xl p-4 sm:p-5 shadow-[0_4px_20px_rgba(6,78,59,0.08)] border-0 transition-all duration-300 [@media(hover:hover)]:hover:shadow-[0_8px_30px_rgba(6,78,59,0.12)] [@media(hover:hover)]:hover:-translate-y-1 flex flex-col relative hover:z-40 focus-within:z-40 ${className}`}>
             <CopyButton handleCopy={handleCopy} status={status} isCopying={isCopying} loading={loading} />
 
             <div className="flex items-center justify-between gap-3 pb-3 mb-4 pr-12 border-b border-gray-100/60 min-w-0">

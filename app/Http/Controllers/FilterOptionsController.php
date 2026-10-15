@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\Employee;
 use App\Models\Location;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class FilterOptionsController extends Controller
 {
@@ -13,11 +13,11 @@ class FilterOptionsController extends Controller
     {
         // For distinct options, we can query Employee, Company, Location
         // Since dataset is small, doing distinct queries is fine
-        
+
         $companies = Company::orderBy('name')->get(['id', 'code', 'name']);
 
         $employeeOptions = Employee::query()->get([
-            'region', 'group', 'organization_name', 'job_level_code', 'employment_type', 'gender', 'location_id', 'company_id'
+            'region', 'group', 'organization_name', 'job_level_code', 'employment_type', 'gender', 'location_id', 'company_id',
         ]);
 
         $regions = $employeeOptions->pluck('region')->unique()->filter()->sort()->values();
@@ -26,13 +26,11 @@ class FilterOptionsController extends Controller
         $jobLevels = $employeeOptions->pluck('job_level_code')->unique()->filter()->sort()->values();
         $employmentTypes = $employeeOptions->pluck('employment_type')->unique()->filter()->sort()->values();
         $genders = $employeeOptions->pluck('gender')->unique()->filter()->sort()->values();
-        
-
 
         $locationsMap = [];
         foreach ($employeeOptions as $emp) {
             if ($emp->location_id) {
-                if (!isset($locationsMap[$emp->location_id])) {
+                if (! isset($locationsMap[$emp->location_id])) {
                     $locationsMap[$emp->location_id] = [];
                 }
                 $locationsMap[$emp->location_id][] = $emp->company_id;
@@ -51,7 +49,7 @@ class FilterOptionsController extends Controller
         // Generations are static
         $generations = ['Boomers', 'Gen X', 'Gen Y', 'Gen Z'];
 
-        $trainingRegions = \Illuminate\Support\Facades\DB::table('training_records')
+        $trainingRegions = DB::table('training_records')
             ->select('region')
             ->distinct()
             ->whereNotNull('region')

@@ -64,9 +64,10 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
         return (
             <Link 
                 href={href} 
+                onClick={() => setMobileOpen(false)}
                 className={`flex items-center transition-all duration-200 group relative z-10
                     ${collapsed 
-                        ? 'justify-center w-10 h-10 mx-auto rounded-full my-1' 
+                        ? 'lg:justify-center lg:w-10 lg:h-10 lg:mx-auto justify-between px-4 py-2.5 mx-3 rounded-full my-0.5' 
                         : 'justify-between px-4 py-2.5 mx-3 rounded-full my-0.5'
                     }
                     ${active 
@@ -75,7 +76,7 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
                     }`}
                 title={collapsed ? label : undefined}
             >
-                <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}>
+                <div className={`flex items-center gap-3 ${collapsed ? 'lg:justify-center' : ''}`}>
                     <Icon 
                         size={18} 
                         strokeWidth={active ? 2.4 : 1.8} 
@@ -83,17 +84,26 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
                             active ? 'text-[#004D40]' : 'text-green-100/70 group-hover:text-white'
                         }`} 
                     />
-                    {!collapsed && <span className="text-[13px] tracking-wide">{label}</span>}
+                    <span className={`text-[13px] tracking-wide ${collapsed ? 'block lg:hidden' : 'block'}`}>{label}</span>
                 </div>
-                {!collapsed && active && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0 shadow-xs" />
+                {active && (
+                    <span className={`w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0 shadow-xs ${collapsed ? 'block lg:hidden' : 'block'}`} />
                 )}
             </Link>
         );
     };
 
     const SectionLabel = ({ label }) => {
-        if (collapsed) return <div className="h-2 my-1 border-t border-white/5" />;
+        if (collapsed) {
+            return (
+                <>
+                    <div className="hidden lg:block h-2 my-1 border-t border-white/5" />
+                    <div className="lg:hidden px-5 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-green-200/40 select-none">
+                        {label}
+                    </div>
+                </>
+            );
+        }
         return (
             <div className="px-5 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-green-200/40 select-none">
                 {label}
@@ -114,27 +124,26 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
             {/* Sidebar */}
             <aside 
                 className={`
-                    ${collapsed ? 'w-20' : 'w-64'} 
-                    bg-[#004D40] border-r border-[#00382e] flex flex-col transition-all duration-300 shrink-0 relative
                     fixed inset-y-0 left-0 z-50 lg:static lg:z-20
+                    w-72 max-w-[85vw] ${collapsed ? 'lg:w-20' : 'lg:w-64'} 
+                    bg-[#004D40] border-r border-[#00382e] flex flex-col transition-all duration-300 shrink-0
                     rounded-r-3xl lg:rounded-none shadow-2xl lg:shadow-none
                     ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 `}
             >
                 {/* Sidebar Header / Logo */}
                 <div className="h-16 flex items-center justify-between px-4 shrink-0 relative z-10 border-b border-white/10">
-                    {!collapsed ? (
-                        <div className="flex items-center gap-3 px-1 w-full">
-                            <div className="bg-white p-2 rounded-2xl shadow-xs flex items-center justify-center shrink-0">
-                                <img src="/logofr.png" alt="Logo" className="h-8.5 w-auto object-contain" />
-                            </div>
-                            <div className="min-w-0">
-                                <span className="font-extrabold text-white text-base tracking-tight block leading-tight">Peta SDM</span>
-                                <span className="text-[10px] text-emerald-200/90 font-bold tracking-wider uppercase block mt-0.5">Operasional FR</span>
-                            </div>
+                    <div className={`flex items-center gap-3 px-1 w-full ${collapsed ? 'lg:hidden' : 'flex'}`}>
+                        <div className="bg-white p-2 rounded-2xl shadow-xs flex items-center justify-center shrink-0">
+                            <img src="/logofr.png" alt="Logo" className="h-8.5 w-auto object-contain" />
                         </div>
-                    ) : (
-                        <div className="mx-auto flex items-center justify-center">
+                        <div className="min-w-0">
+                            <span className="font-extrabold text-white text-base tracking-tight block leading-tight">Peta SDM</span>
+                            <span className="text-[10px] text-emerald-200/90 font-bold tracking-wider uppercase block mt-0.5">Operasional FR</span>
+                        </div>
+                    </div>
+                    {collapsed && (
+                        <div className="hidden lg:flex mx-auto items-center justify-center">
                             <div className="bg-white p-2 rounded-2xl shadow-xs">
                                 <img src="/logofr.png" alt="Logo" className="h-8 w-auto object-contain" />
                             </div>
@@ -154,6 +163,7 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
                     <button 
                         onClick={() => setMobileOpen(false)} 
                         className="lg:hidden text-green-100/70 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
+                        title="Tutup Navigasi"
                     >
                         <X size={20} />
                     </button>
@@ -284,7 +294,7 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
                 </header>
 
                 {/* Page Content Body */}
-                <main className={`flex-1 ${fullHeight ? 'relative overflow-hidden' : 'p-5 lg:p-6 overflow-auto'}`}>
+                <main className={`flex-1 ${fullHeight ? 'relative overflow-hidden' : 'p-3.5 sm:p-5 lg:p-6 overflow-auto'}`}>
                     <div className={fullHeight ? 'w-full h-full' : 'max-w-7xl mx-auto'}>
                         {children}
                     </div>

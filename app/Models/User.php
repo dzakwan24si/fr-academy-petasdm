@@ -30,5 +30,4 @@ class User extends Authenticatable
             'is_active' => 'boolean',
         ];
     }
-
 }

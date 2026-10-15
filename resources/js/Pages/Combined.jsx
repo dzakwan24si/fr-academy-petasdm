@@ -513,7 +513,7 @@ function CompanyRankingTable({ data = [], onSelectCompany, isSelectedCompany }) 
                     </div>
 
                     {totalPages > 1 && (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center flex-wrap justify-center sm:justify-end gap-1">
                             <button
                                 type="button"
                                 disabled={currentPage === 1}
@@ -882,7 +882,7 @@ function JobTitlesTable({ data = [], onSelectJobTitle, onSelectLevel }) {
                     </div>
 
                     {totalPages > 1 && (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center flex-wrap justify-center sm:justify-end gap-1">
                             <button
                                 type="button"
                                 disabled={currentPage === 1}

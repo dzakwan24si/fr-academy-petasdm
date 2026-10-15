@@ -2,21 +2,18 @@
 
 namespace App\Support;
 
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
-use App\Support\Demographics;
 
 class MetricsHelper
 {
     /**
      * Menghitung jumlah karyawan dengan masa kerja < 1 tahun yang TIDAK punya training.
      * Menggunakan logika yang persis sama dengan CombinedMetrics.
-     * 
-     * @param \Illuminate\Support\Collection $employees Koleksi object karyawan (minimal punya id, join_date)
-     * @param \Carbon\Carbon $asOf
-     * @param array|null $empHours Array assoc [employee_id => total_hours] (opsional untuk optimalisasi)
-     * @return int
+     *
+     * @param  Collection  $employees  Koleksi object karyawan (minimal punya id, join_date)
+     * @param  array|null  $empHours  Array assoc [employee_id => total_hours] (opsional untuk optimalisasi)
      */
     public static function countNewHireNoTraining(Collection $employees, Carbon $asOf, ?array $empHours = null): int
     {
@@ -29,7 +26,9 @@ class MetricsHelper
 
             $empHours = [];
             foreach ($trainings as $t) {
-                if (!isset($empHours[$t->employee_id])) $empHours[$t->employee_id] = 0;
+                if (! isset($empHours[$t->employee_id])) {
+                    $empHours[$t->employee_id] = 0;
+                }
                 $empHours[$t->employee_id] += $t->hours;
             }
         }
@@ -39,8 +38,8 @@ class MetricsHelper
             $hasTraining = isset($empHours[$e->id]);
             $join = $e->join_date ? Carbon::parse($e->join_date) : null;
             $tenureFloat = Demographics::los($join, $asOf);
-            
-            if ($tenureFloat !== null && $tenureFloat < 1 && !$hasTraining) {
+
+            if ($tenureFloat !== null && $tenureFloat < 1 && ! $hasTraining) {
                 $count++;
             }
         }
@@ -55,14 +54,14 @@ class MetricsHelper
     {
         $count = 0;
         $targetYear = $asOf->year;
-        
+
         foreach ($employees as $e) {
             $join = $e->join_date ? Carbon::parse($e->join_date) : null;
             if ($join !== null && $join->year === $targetYear) {
                 $count++;
             }
         }
-        
+
         return $count;
     }
 }

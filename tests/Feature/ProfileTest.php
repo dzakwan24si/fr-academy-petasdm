@@ -2,11 +2,10 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
+use Tests\TestCase;
 
 class ProfileTest extends TestCase
 {
@@ -14,7 +13,7 @@ class ProfileTest extends TestCase
 
     public function test_profile_page_is_displayed(): void
     {
-        $user = User::factory()->create();  
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get('/pengaturan');
 
@@ -37,10 +36,10 @@ class ProfileTest extends TestCase
 
         $this->assertSame('Test User Updated', $user->name);
         $this->assertSame('testupdated@example.com', $user->email);
-        
+
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => $user->id,
-            'action' => 'account.updated'
+            'action' => 'account.updated',
         ]);
     }
 
@@ -72,10 +71,10 @@ class ProfileTest extends TestCase
         $response->assertRedirect();
 
         $this->assertTrue(Hash::check('password_baru_panjang', $user->refresh()->password));
-        
+
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => $user->id,
-            'action' => 'account.password_changed'
+            'action' => 'account.password_changed',
         ]);
     }
 

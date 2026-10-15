@@ -93,7 +93,7 @@ class WorkforceMetrics
             if ($e->gender === 'Female') {
                 $females++;
             }
-            if ($e->employment_type === 'PERM') {
+            if ($e->employment_type === 'PERM' || $e->employment_type === 'PERMANENT') {
                 $perm++;
             }
 

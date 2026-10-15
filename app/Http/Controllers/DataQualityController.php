@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class DataQualityController extends Controller
 {
@@ -30,7 +29,7 @@ class DataQualityController extends Controller
                 'unmatched_nik' => $unmatched,
                 'alias_total' => $aliasTotal,
                 'alias_unmatched' => $aliasUnmatched,
-            ]
+            ],
         ]);
     }
 }

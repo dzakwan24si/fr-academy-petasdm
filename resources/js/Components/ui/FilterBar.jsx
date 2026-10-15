@@ -40,9 +40,9 @@ export default function FilterBar({ isTrainingPage = false }) {
     }));
 
     return (
-        <div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(6,78,59,0.08)] border-0 mb-6 relative z-10">
+        <div className={`bg-white rounded-xl shadow-[0_4px_20px_rgba(6,78,59,0.08)] border-0 mb-6 relative ${isOpen ? 'z-50' : 'z-20'}`}>
             {/* Chips area and Toggle Button */}
-            <div className="p-4 flex items-center justify-between border-b border-gray-100/60 bg-gray-50/30 rounded-t-xl">
+            <div className="p-3 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-gray-100/60 bg-gray-50/30 rounded-t-xl">
                 <div className="flex-1 flex gap-2 flex-wrap items-center">
                     {activeCount > 0 ? (
                         <>
@@ -98,7 +98,7 @@ export default function FilterBar({ isTrainingPage = false }) {
                 
                 <button 
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors shrink-0 w-full sm:w-auto"
                 >
                     <Filter size={14} />
                     {isOpen ? 'Tutup Filter' : 'Filter Lanjutan'}
@@ -107,8 +107,8 @@ export default function FilterBar({ isTrainingPage = false }) {
             </div>
             
             {isOpen && (
-                <div className="p-5 bg-white">
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div className="p-3.5 sm:p-5 bg-white">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                         <div className="flex flex-col gap-1">
                     <label className="text-xs text-gray-500">Region</label>
                     <MultiSelect 

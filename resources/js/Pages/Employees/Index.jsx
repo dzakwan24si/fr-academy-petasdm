@@ -241,7 +241,7 @@ export default function EmployeeIndex({ employees, filters }) {
                         <div className="text-sm text-gray-500">
                             Menampilkan <span className="font-semibold text-gray-900">{employees.from}</span> - <span className="font-semibold text-gray-900">{employees.to}</span> dari <span className="font-semibold text-gray-900">{employees.total?.toLocaleString('id-ID')}</span> karyawan
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center flex-wrap justify-center sm:justify-end gap-1">
                             {employees.links.map((link, i) => {
                                 let label = link.label;
                                 if (String(link.label).toLowerCase().includes('previous')) {

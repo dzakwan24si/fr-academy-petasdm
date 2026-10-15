@@ -100,7 +100,7 @@ export default function Dashboard({ metrics, insight }) {
                 {hasData ? (
                     <div className="space-y-6 animate-in fade-in duration-500">
                         {/* KPI Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
                             <KpiCard title="Total Karyawan" value={metrics.total_hc} highlight={true} />
                             <KpiCard title="Rata-rata Umur" value={metrics.avg_age} isDecimal={true} unit="Tahun" />
                             <KpiCard title="Rata-rata Masa Kerja" value={metrics.avg_los} isDecimal={true} unit="Tahun" />

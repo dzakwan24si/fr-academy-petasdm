@@ -22,7 +22,7 @@ class InsightBuilder
 
         $pensiunCount = $rawTotals['pensiun'];
         $pensiunPct = round(($pensiunCount / $totalHc) * 100, 1);
-        
+
         $tingkatRisiko = $pensiunPct > 10 ? 'tinggi' : ($pensiunPct > 5 ? 'sedang' : 'rendah');
 
         return "Mayoritas karyawan adalah generasi {$topGen} ({$genPct}%) dan berada di usia produktif (rata-rata {$avgAge} tahun). Risiko kehilangan pengetahuan cukup {$tingkatRisiko} dengan {$pensiunCount} karyawan ({$pensiunPct}%) yang akan segera memasuki batas usia pensiun (55).";

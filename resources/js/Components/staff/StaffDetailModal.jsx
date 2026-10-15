@@ -108,19 +108,19 @@ export function StaffDetailModal({ employeeId, onClose }) {
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header Modal Minimalis */}
-                <div className="px-6 py-4 bg-white border-b border-gray-100 flex justify-between items-center shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-emerald-50 text-[#004D40]">
+                <div className="px-4 sm:px-6 py-3 sm:py-4 bg-white border-b border-gray-100 flex justify-between items-center shrink-0">
+                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                        <div className="p-2 rounded-xl bg-emerald-50 text-[#004D40] shrink-0">
                             <User size={18} />
                         </div>
-                        <div>
-                            <h2 className="text-base font-bold text-gray-900 leading-tight">Detail Profil Karyawan</h2>
-                            <p className="text-xs text-gray-500">Informasi komprehensif kepegawaian dan riwayat pelatihan</p>
+                        <div className="min-w-0">
+                            <h2 className="text-sm sm:text-base font-bold text-gray-900 leading-tight truncate">Detail Profil Karyawan</h2>
+                            <p className="text-xs text-gray-500 hidden sm:block">Informasi komprehensif kepegawaian dan riwayat pelatihan</p>
                         </div>
                     </div>
                     <button 
                         onClick={onClose} 
-                        className="text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-full transition-colors"
+                        className="text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-full transition-colors shrink-0"
                         title="Tutup (Esc)"
                     >
                         <X size={18} />
@@ -128,7 +128,7 @@ export function StaffDetailModal({ employeeId, onClose }) {
                 </div>
                 
                 {/* Modal Body */}
-                <div className="p-5 sm:p-7 overflow-y-auto flex-1">
+                <div className="p-4 sm:p-7 overflow-y-auto flex-1">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
                             <div className="w-9 h-9 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mb-3"></div>

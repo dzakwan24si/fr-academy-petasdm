@@ -43,8 +43,8 @@ class EmployeeFilter
                 'Gen X' => 1980,
                 'Gen Y' => 1996,
             ]);
-            
-            $query->where(function($q) use ($generations, $config) {
+
+            $query->where(function ($q) use ($generations, $config) {
                 foreach ($generations as $gen) {
                     if ($gen === 'Boomers') {
                         $q->orWhereYear('birth_date', '<=', $config['Boomers']);

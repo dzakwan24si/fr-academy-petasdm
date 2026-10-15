@@ -17,7 +17,7 @@ class TrainingFilter
             $query->whereIn('month', (array) $request->input('month'));
         }
         if ($request->filled('training_name')) {
-            $query->where('training_name', 'like', '%' . $request->input('training_name') . '%');
+            $query->where('training_name', 'like', '%'.$request->input('training_name').'%');
         }
         if ($request->filled('regularity')) {
             $query->whereIn('regularity', (array) $request->input('regularity'));
