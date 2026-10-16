@@ -6,23 +6,72 @@ use App\Imports\GenericImport;
 use App\Models\ImportBatch;
 use App\Support\Clean;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use RuntimeException;
 use Throwable;
 
 class EmployeeImporter
 {
+    public const COMPANY_DEFAULTS = [
+        'R01' => ['group' => 'FR', 'region' => 'Riau'],
+        'R02' => ['group' => 'FR', 'region' => 'Riau'],
+        'R03' => ['group' => 'FR', 'region' => 'Riau'],
+        'R04' => ['group' => 'FR', 'region' => 'Riau'],
+        'R05' => ['group' => 'FR', 'region' => 'Riau'],
+        'R06' => ['group' => 'FR', 'region' => 'Riau'],
+        'R07' => ['group' => 'FR', 'region' => 'Riau'],
+        'R08' => ['group' => 'FR', 'region' => 'Riau'],
+        'R09' => ['group' => 'FR', 'region' => 'Riau'],
+        'R10' => ['group' => 'FR', 'region' => 'Riau'],
+        'R11' => ['group' => 'FR', 'region' => 'Riau'],
+        'R12' => ['group' => 'FR', 'region' => 'Riau'],
+        'R13' => ['group' => 'FR', 'region' => 'Riau'],
+        'R14' => ['group' => 'FR', 'region' => 'Riau'],
+        'R15' => ['group' => 'FR', 'region' => 'Riau'],
+        'R16' => ['group' => 'FR', 'region' => 'Riau'],
+        'R17' => ['group' => 'FR', 'region' => 'Riau'],
+        'R18' => ['group' => 'FR', 'region' => 'Riau'],
+        'R20' => ['group' => 'FR', 'region' => 'Riau'],
+        'R21' => ['group' => 'FR', 'region' => 'Riau'],
+        'R22' => ['group' => 'FR', 'region' => 'Riau'],
+        'B01' => ['group' => 'FR', 'region' => 'Kalbar'],
+        'B03' => ['group' => 'FR', 'region' => 'Kalbar'],
+        'B04' => ['group' => 'FR', 'region' => 'Kalbar'],
+        'B05' => ['group' => 'FR', 'region' => 'Kalbar'],
+        'B06' => ['group' => 'FR', 'region' => 'Kalbar'],
+        'B07' => ['group' => 'FR', 'region' => 'Kalbar'],
+        'B08' => ['group' => 'FR', 'region' => 'Kalbar'],
+        'B10' => ['group' => 'PO2', 'region' => 'Corp'],
+        'L01' => ['group' => 'PO2', 'region' => 'Corp'],
+        'L02' => ['group' => 'PO2', 'region' => 'Corp'],
+        'U01' => ['group' => 'PO2', 'region' => 'Corp'],
+        'U02' => ['group' => 'PO2', 'region' => 'Corp'],
+        'U03' => ['group' => 'PO2', 'region' => 'Corp'],
+        'T09' => ['group' => 'FR', 'region' => 'Kubar'],
+        'T10' => ['group' => 'FR', 'region' => 'Kubar'],
+        'T11' => ['group' => 'FR', 'region' => 'Kubar'],
+        'T12' => ['group' => 'FR', 'region' => 'Kubar'],
+        'T13' => ['group' => 'FR', 'region' => 'Kubar'],
+        'T14' => ['group' => 'FR', 'region' => 'Kubar'],
+        'T15' => ['group' => 'FR', 'region' => 'Kubar'],
+        'T16' => ['group' => 'NON GROUP', 'region' => 'Non'],
+        'J04' => ['group' => 'NON GROUP', 'region' => 'Non'],
+        'J05' => ['group' => 'NON GROUP', 'region' => 'Non'],
+    ];
+
     private array $companiesCache = [];
 
     private array $locationsCache = [];
 
-    public function import(UploadedFile $file, ?int $userId = null): ImportBatch
+    public function import(UploadedFile $file, ?int $userId = null, bool $replaceAll = false): ImportBatch
     {
         $batch = ImportBatch::create([
             'user_id' => $userId,
             'type' => 'employee',
-            'filename' => $file->getClientOriginalName(),
+            'filename' => $file->getClientOriginalName().($replaceAll ? ' (Ganti Total)' : ''),
             'status' => 'running',
             'started_at' => now(),
         ]);
@@ -30,11 +79,36 @@ class EmployeeImporter
         $report = new ImportReport;
 
         try {
-            DB::transaction(function () use ($file, $report) {
+            DB::transaction(function () use ($file, $report, $replaceAll) {
+                if ($replaceAll) {
+                    DB::table('training_records')->whereNotNull('employee_id')->update(['employee_id' => null]);
+                    Storage::disk('public')->deleteDirectory('employees/photos');
+                    DB::table('employees')->delete();
+                }
+
                 $this->companiesCache = DB::table('companies')->pluck('id', 'code')->all();
                 $this->locationsCache = DB::table('locations')->pluck('id', 'code')->all();
                 $this->processFile($file, $report);
+
+                // Auto-relink training records to newly imported employees based on NIK
+                $driver = DB::getDriverName();
+                if ($driver === 'mysql') {
+                    DB::statement("
+                        UPDATE training_records tr
+                        JOIN employees e ON tr.nik = e.employee_id
+                        SET tr.employee_id = e.id
+                        WHERE tr.employee_id IS NULL AND tr.nik IS NOT NULL AND tr.nik != ''
+                    ");
+                } else {
+                    DB::statement("
+                        UPDATE training_records
+                        SET employee_id = (SELECT id FROM employees WHERE employees.employee_id = training_records.nik)
+                        WHERE employee_id IS NULL AND nik IS NOT NULL AND nik != ''
+                    ");
+                }
             });
+
+            Cache::flush();
 
             try {
                 $batch->update([
@@ -122,38 +196,50 @@ class EmployeeImporter
         }
 
         $companyCode = trim((string) $r['Company Code']);
+        [$group, $region] = $this->resolveGroupAndRegion($companyCode, $r['Group'] ?? null, $r['Region'] ?? null, $report, $employeeId);
+
+        $companyName = trim((string) $r['Company Name']);
+        if (str_starts_with($companyName, '=')) {
+            $companyName = $companyCode;
+        }
+
         if (! isset($this->companiesCache[$companyCode])) {
             $id = DB::table('companies')->insertGetId([
                 'code' => $companyCode,
-                'name' => trim((string) $r['Company Name']),
-                'group' => trim((string) $r['Group']),
-                'region' => trim((string) $r['Region']),
+                'name' => $companyName,
+                'group' => $group,
+                'region' => $region,
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
             $this->companiesCache[$companyCode] = $id;
         } else {
             DB::table('companies')->where('id', $this->companiesCache[$companyCode])->update([
-                'name' => trim((string) $r['Company Name']),
-                'group' => trim((string) $r['Group']),
-                'region' => trim((string) $r['Region']),
+                'name' => $companyName,
+                'group' => $group,
+                'region' => $region,
                 'updated_at' => $now,
             ]);
         }
         $companyId = $this->companiesCache[$companyCode];
 
         $locationCode = trim((string) $r['Location Code']);
+        $locationName = trim((string) $r['Location Name']);
+        if (str_starts_with($locationName, '=')) {
+            $locationName = $locationCode;
+        }
+
         if (! isset($this->locationsCache[$locationCode])) {
             $id = DB::table('locations')->insertGetId([
                 'code' => $locationCode,
-                'name' => trim((string) $r['Location Name']),
+                'name' => $locationName,
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
             $this->locationsCache[$locationCode] = $id;
         } else {
             DB::table('locations')->where('id', $this->locationsCache[$locationCode])->update([
-                'name' => trim((string) $r['Location Name']),
+                'name' => $locationName,
                 'updated_at' => $now,
             ]);
         }
@@ -186,12 +272,57 @@ class EmployeeImporter
                 'religion' => trim((string) $r['Religion']),
                 'ptkp_code' => trim((string) $r['PTKP Code']),
                 'ptkp_name' => trim((string) $r['PTKP Name']),
-                'group' => trim((string) $r['Group']),
-                'region' => trim((string) $r['Region']),
+                'group' => $group,
+                'region' => $region,
                 'updated_at' => $now,
             ]
         );
 
         $report->importedRows++;
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function resolveGroupAndRegion(string $companyCode, ?string $rawGroup, ?string $rawRegion, ImportReport $report, string $employeeId): array
+    {
+        $group = trim((string) $rawGroup);
+        $region = trim((string) $rawRegion);
+
+        $isGroupCorrupt = str_starts_with($group, '=') || str_starts_with($group, '#') || $group === '';
+        $isRegionCorrupt = str_starts_with($region, '=') || str_starts_with($region, '#') || $region === '';
+
+        if ($isGroupCorrupt || $isRegionCorrupt) {
+            $default = self::COMPANY_DEFAULTS[$companyCode] ?? null;
+
+            if (! $default) {
+                $prefix = strtoupper(substr($companyCode, 0, 1));
+                $default = match ($prefix) {
+                    'R' => ['group' => 'FR', 'region' => 'Riau'],
+                    'B' => ($companyCode === 'B10') ? ['group' => 'PO2', 'region' => 'Corp'] : ['group' => 'FR', 'region' => 'Kalbar'],
+                    'T' => ($companyCode === 'T16') ? ['group' => 'NON GROUP', 'region' => 'Non'] : ['group' => 'FR', 'region' => 'Kubar'],
+                    'U', 'L' => ['group' => 'PO2', 'region' => 'Corp'],
+                    'J' => ['group' => 'NON GROUP', 'region' => 'Non'],
+                    default => null,
+                };
+            }
+
+            if ($default) {
+                if ($isGroupCorrupt) {
+                    $group = $default['group'];
+                }
+                if ($isRegionCorrupt) {
+                    $region = $default['region'];
+                }
+
+                $report->addWarning(
+                    'formula_or_empty_group_region',
+                    'Kolom Group/Region berupa formula Excel atau kosong, otomatis dipulihkan ke nilai standar.',
+                    "Employee ID: $employeeId ($companyCode -> Group: $group, Region: $region)"
+                );
+            }
+        }
+
+        return [$group, $region];
     }
 }

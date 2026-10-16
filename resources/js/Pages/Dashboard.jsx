@@ -7,8 +7,7 @@ import { DonutChart } from '@/Components/charts/DonutChart';
 import { StackedBar } from '@/Components/charts/StackedBar';
 import { HorizontalBar } from '@/Components/charts/HorizontalBar';
 import { LineTrend } from '@/Components/charts/LineTrend';
-import { RegionalMapWidget } from '@/Components/charts/RegionalMapWidget';
-import { generationColors, facilityColors } from '@/lib/colors';
+import { generationColors } from '@/lib/colors';
 import { formatNumber } from '@/lib/format';
 import { InfoTooltip } from '@/Components/ui/InfoTooltip';
 import { UserPlus, UserCheck } from 'lucide-react';
@@ -34,13 +33,15 @@ export default function Dashboard({ metrics, insight }) {
 
     const stackedData = hasData ? levelOrder.map(level => {
         const gens = metrics.generations_by_level?.[level] || {};
+        const total = Object.values(gens).reduce((sum, val) => sum + (Number(val) || 0), 0);
         return {
             name: `Level ${level}`,
             level,
+            total,
             top_titles: metrics.titles_by_level?.[level] || {},
             ...gens
         };
-    }) : [];
+    }).filter(row => row.total > 0) : [];
 
     const regionData = hasData ? Object.entries(metrics.hc_by_region)
         .map(([name, value]) => ({ name, value }))
@@ -50,12 +51,6 @@ export default function Dashboard({ metrics, insight }) {
         .map(([name, value]) => ({ name, value }))
         .sort((a, b) => b.value - a.value)
         .slice(0, 10) : [];
-        
-    const facilityData = hasData ? [
-        { name: 'Estate', value: Object.values(metrics.hc_by_region_facility || {}).reduce((s, r) => s + (r.Estate || 0), 0), fill: facilityColors.Estate },
-        { name: 'Mill', value: Object.values(metrics.hc_by_region_facility || {}).reduce((s, r) => s + (r.Mill || 0), 0), fill: facilityColors.Mill },
-        { name: 'HO', value: Object.values(metrics.hc_by_region_facility || {}).reduce((s, r) => s + (r.HO || 0), 0), fill: facilityColors.HO },
-    ] : [];
         
     const trainingTrendData = hasData && metrics.training?.trend ? Object.entries(metrics.training.trend).map(([my, val]) => ({
         name: my, value: val
@@ -76,8 +71,6 @@ export default function Dashboard({ metrics, insight }) {
             total_titles: Object.keys(topTitles).length
         };
     }).filter(row => row.total > 0).sort((a, b) => b.pct - a.pct) : [];
-
-    const { ref: sectionRef, isCopying, status, handleCopy } = useCopyAsImage({ title: 'Distribusi Tenaga Kerja per Operasional' });
     const { ref: retireRef, isCopying: retireCopying, status: retireStatus, handleCopy: handleRetireCopy } = useCopyAsImage({ 
         title: 'Risiko Pensiun per Level Jabatan',
         onBeforeCapture: (el) => {
@@ -106,7 +99,7 @@ export default function Dashboard({ metrics, insight }) {
                             <KpiCard title="Rata-rata Masa Kerja" value={metrics.avg_los} isDecimal={true} unit="Tahun" />
                             <KpiCard title="Risiko Pensiun" value={metrics.pensiun} note="Usia >= 55 tahun" />
                             
-                            <KpiCard title="Karyawan Baru Belum Dilatih (<1 Tahun)" value={metrics.new_hire_no_training || 0} note="Perlu onboarding pelatihan" icon={UserPlus} />
+                            <KpiCard title="Karyawan Belum Pernah Training (<1 Tahun)" value={metrics.new_hire_no_training || 0} note="Perlu onboarding training" icon={UserPlus} />
                             <KpiCard title="Karyawan Baru Masuk Tahun Ini" value={metrics.new_hire_this_year || 0} note={`Sejak Januari ${new Date().getFullYear()}`} icon={UserCheck} />
                             <KpiCard title="Total Jam Pelatihan" value={metrics.training?.total_hours || 0} isDecimal={true} unit="Jam" secondaryText={`Unlinked: ${metrics.training?.unlinked_rows || 0}`} />
                             <KpiCard title="Training Coverage" value={metrics.training?.coverage_pct || 0} isDecimal={true} unit="%" />
@@ -126,37 +119,6 @@ export default function Dashboard({ metrics, insight }) {
                             <ChartCard title="Generasi per Level Jabatan" loading={!metrics} className="lg:col-span-2">
                                 <StackedBar data={stackedData} keys={stackedKeys} xAxisKey="name" onClick={(key) => toggleFilter('generation', key)} />
                             </ChartCard>
-
-                            <div ref={sectionRef} className="lg:col-span-3 bg-white p-6 rounded-2xl shadow-[0_4px_20px_rgba(6,78,59,0.08)] border-0 flex flex-col lg:flex-row gap-6 relative transition-all duration-300 [@media(hover:hover)]:hover:shadow-[0_8px_30px_rgba(6,78,59,0.12)] [@media(hover:hover)]:hover:-translate-y-1">
-                                <CopyButton handleCopy={handleCopy} status={status} isCopying={isCopying} />
-                                <div className="flex-1">
-                                    <div className="mb-4">
-                                        <h3 className="text-lg font-bold text-gray-900">Distribusi Tenaga Kerja per Operasional</h3>
-                                        <p className="text-sm text-gray-500">Estate, Mill dan Head Office</p>
-                                    </div>
-                                    {hasData && <RegionalMapWidget data={metrics.hc_by_region_facility} total={metrics.total_hc} />}
-                                </div>
-                                <div className="w-full lg:w-72 shrink-0 border-t lg:border-t-0 lg:border-l border-gray-100 pt-6 lg:pt-0 lg:pl-6 flex flex-col">
-                                    <h3 className="text-sm font-bold text-gray-900 mb-4">Total per Operasional</h3>
-                                    <div className="flex-1 min-h-[250px]">
-                                        {hasData && <DonutChart data={facilityData} dataKey="value" hideLegend={true} unit="karyawan" />}
-                                    </div>
-                                    <div className="mt-4 space-y-2 text-xs">
-                                        {facilityData.map(item => (
-                                            <div key={item.name} className="flex justify-between items-center">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.fill }}></div>
-                                                    <span className="text-gray-700">{item.name}</span>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <span className="font-bold text-gray-900">{formatNumber(item.value)}</span>
-                                                    <span className="text-gray-400 w-8 text-right">{metrics.total_hc ? Math.round((item.value/metrics.total_hc)*100) : 0}%</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
 
                             <ChartCard title="Top 10 Perusahaan (HC)" loading={!metrics} className="lg:col-span-2">
                                 <HorizontalBar 
@@ -211,6 +173,7 @@ export default function Dashboard({ metrics, insight }) {
                                                                     </button>
                                                                     {row.total_titles > 0 && (
                                                                         <InfoTooltip 
+                                                                            position="top"
                                                                             title={`Komposisi Jabatan - ${row.name}`}
                                                                             text={
                                                                                 <div className="space-y-1.5 text-xs">

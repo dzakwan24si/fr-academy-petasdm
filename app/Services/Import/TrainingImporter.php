@@ -44,6 +44,8 @@ class TrainingImporter
                 $this->processFile($file, $report);
             });
 
+            Cache::flush();
+
             $batch->update([
                 'rows_total' => $report->totalRows,
                 'rows_imported' => $report->importedRows,

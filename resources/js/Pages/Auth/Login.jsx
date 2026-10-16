@@ -2,8 +2,9 @@ import { useForm, Head } from '@inertiajs/react';
 
 export default function Login() {
     const { data, setData, post, processing, errors } = useForm({
-        email: '',
+        nik: '',
         password: '',
+        remember: false,
     });
 
     const submit = (e) => {
@@ -13,7 +14,7 @@ export default function Login() {
 
     return (
         <div className="min-h-screen flex bg-app-bg font-sans">
-            <Head title="Login" />
+            <Head title="Masuk - Peta SDM" />
             
             {/* Kolom Kiri - Visual Panel (Image Background) */}
             <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-end p-12">
@@ -49,21 +50,22 @@ export default function Login() {
                             <img src="/logofr.png" alt="Logo" className="w-12 h-12 object-contain" />
                         </div>
                         <h1 className="text-3xl font-bold text-corporate-dark mb-3">Selamat Datang</h1>
-                        <p className="text-gray-500">Silakan masuk ke akun Anda untuk melanjutkan ke Peta SDM Operasional.</p>
+                        <p className="text-gray-500">Silakan masuk menggunakan NIK pegawai Anda untuk melanjutkan.</p>
                     </div>
 
                     <form onSubmit={submit} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Email atau NIK Pegawai</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">NIK Pegawai</label>
                             <input
                                 type="text"
-                                value={data.email}
-                                onChange={e => setData('email', e.target.value)}
-                                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-corporate-light focus:border-corporate-light outline-none transition-all"
-                                placeholder="Masukkan NIK atau Email"
+                                value={data.nik}
+                                onChange={e => setData('nik', e.target.value)}
+                                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-corporate-light focus:border-corporate-light outline-none transition-all placeholder:text-gray-400"
+                                placeholder="Masukkan NIK (contoh: 2018050444)"
                                 required
+                                autoFocus
                             />
-                            {errors.email && <p className="text-red-500 text-sm mt-2">{errors.email}</p>}
+                            {errors.nik && <p className="text-red-500 text-sm mt-2 font-medium">{errors.nik}</p>}
                         </div>
 
                         <div>
@@ -72,10 +74,11 @@ export default function Login() {
                                 type="password"
                                 value={data.password}
                                 onChange={e => setData('password', e.target.value)}
-                                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-corporate-light focus:border-corporate-light outline-none transition-all"
+                                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-corporate-light focus:border-corporate-light outline-none transition-all placeholder:text-gray-400"
                                 placeholder="Masukkan kata sandi"
                                 required
                             />
+                            {errors.password && <p className="text-red-500 text-sm mt-2 font-medium">{errors.password}</p>}
                         </div>
 
 

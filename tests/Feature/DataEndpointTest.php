@@ -6,7 +6,10 @@ use App\Models\Company;
 use App\Models\Employee;
 use App\Models\Location;
 use App\Models\User;
+use App\Services\TenureMetrics;
+use App\Support\EmployeeFilter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -95,5 +98,50 @@ class DataEndpointTest extends TestCase
             'subject_type' => Employee::class,
             'subject_id' => $employee->id,
         ]);
+    }
+
+    public function test_cohort_employees_endpoint_returns_filtered_by_year()
+    {
+        $response = $this->actingAs($this->user)->getJson('/data/cohort/2015/employees');
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'data' => [
+                '*' => ['id', 'employee_id', 'name', 'job_title_name', 'job_level_code', 'department', 'company_code', 'region', 'gender', 'employment_type', 'join_date'],
+            ],
+            'total',
+            'current_page',
+        ]);
+
+        $this->assertEquals(6, $response->json('total'));
+
+        // Test year without employees
+        $emptyResponse = $this->actingAs($this->user)->getJson('/data/cohort/1999/employees');
+        $emptyResponse->assertStatus(200);
+        $this->assertEquals(0, $emptyResponse->json('total'));
+    }
+
+    public function test_tenure_metrics_waves_includes_gender_distribution()
+    {
+        DB::table('employees')->insert([
+            'employee_id' => 'E7',
+            'name' => 'E7 Female',
+            'company_id' => $this->company1Id,
+            'location_id' => $this->location1Id,
+            'region' => 'Riau',
+            'gender' => 'Female',
+            'birth_date' => '1992-05-10',
+            'join_date' => '2015-03-01',
+        ]);
+
+        $service = new TenureMetrics;
+        $metrics = $service->getMetrics(new Request, new EmployeeFilter);
+
+        $this->assertNotEmpty($metrics['waves']);
+        $wave2015 = collect($metrics['waves'])->firstWhere('year', 2015);
+        $this->assertNotNull($wave2015);
+        $this->assertEquals(6, $wave2015['genders']['Male'] ?? 0);
+        $this->assertEquals(1, $wave2015['genders']['Female'] ?? 0);
+        $this->assertArrayNotHasKey('Unknown', $wave2015['genders']);
     }
 }

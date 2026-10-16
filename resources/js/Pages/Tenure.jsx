@@ -6,12 +6,13 @@ import { HorizontalBar } from '@/Components/charts/HorizontalBar';
 import { Histogram } from '@/Components/charts/Histogram';
 import { LineTrend } from '@/Components/charts/LineTrend';
 import { Heatmap } from '@/Components/charts/Heatmap';
-import { ScatterChart } from '@/Components/charts/ScatterChart';
 import { defaultPalette } from '@/lib/colors';
 import { formatNumber } from '@/lib/format';
 import { useState } from 'react';
 import { useCrossFilter } from '@/hooks/useCrossFilter';
-import { Calendar, TrendingUp, Users } from 'lucide-react';
+import { Calendar, Users, ArrowRight } from 'lucide-react';
+import { CohortDetailModal } from '@/Components/tenure/CohortDetailModal';
+import { StaffDetailModal } from '@/Components/staff/StaffDetailModal';
 
 function TenureSkeleton() {
     return (
@@ -27,6 +28,8 @@ function TenureSkeleton() {
 
 export default function Tenure({ metrics }) {
     const { toggleFilter, hasFilter } = useCrossFilter();
+    const [selectedCohort, setSelectedCohort] = useState(null);
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
     const hasData = metrics && metrics.histogram && Object.keys(metrics.histogram).length > 0;
     const [trendType, setTrendType] = useState('yearly');
 
@@ -56,7 +59,6 @@ export default function Tenure({ metrics }) {
         }))
     ) : [];
 
-    const scatterData = hasData ? metrics.scatter : [];
     const wavesData = hasData ? metrics.waves : [];
 
     const maxWaveTotal = hasData && wavesData.length > 0 
@@ -65,9 +67,6 @@ export default function Tenure({ metrics }) {
     const totalWaveHC = hasData && wavesData.length > 0
         ? wavesData.reduce((acc, w) => acc + w.total, 0)
         : 0;
-    const peakWave = hasData && wavesData.length > 0
-        ? wavesData.reduce((max, w) => (w.total > (max?.total || 0) ? w : max), null)
-        : null;
 
     return (
         <AppLayout title="Masa Kerja & Rekrutmen">
@@ -78,10 +77,6 @@ export default function Tenure({ metrics }) {
                 <p className="text-sm text-gray-500 mt-1">
                     Distribusi masa bakti, pola rekrutmen, dan anomali umur bergabung.
                 </p>
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-lg text-blue-800 text-sm flex items-center shadow-sm">
-                    <span className="mr-2">ℹ️</span>
-                    Turnover/resign belum dapat dianalisis karena data resign belum tersedia.
-                </div>
             </div>
 
             <FilterBar />
@@ -121,19 +116,14 @@ export default function Tenure({ metrics }) {
                             </ChartCard>
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <ChartCard title="Sebaran Umur vs Masa Kerja (Anomali)">
-                                <ScatterChart data={scatterData} xKey="umur" yKey="masa_kerja" zKey="anomali" xLabel="Umur" yLabel="Masa Kerja" />
-                            </ChartCard>
-                            
-                            <ChartCard title="Heatmap Rekrutmen (Tahun x Region)" height="h-auto">
-                                {heatmapData.length > 0 ? (
-                                    <Heatmap data={heatmapData} xLabels={yearNames} yLabels={regionNames} title="Heatmap Rekrutmen (Tahun × Region)" />
-                                ) : (
-                                    <div className="flex items-center justify-center h-full text-gray-500">Tidak ada data</div>
-                                )}
-                            </ChartCard>
-                        </div>
+                        {/* Heatmap Rekrutmen (Tahun x Region) - Lebar Penuh */}
+                        <ChartCard title="Heatmap Rekrutmen (Tahun x Region)" height="h-auto">
+                            {heatmapData.length > 0 ? (
+                                <Heatmap data={heatmapData} xLabels={yearNames} yLabels={regionNames} title="Heatmap Rekrutmen (Tahun × Region)" />
+                            ) : (
+                                <div className="flex items-center justify-center h-full text-gray-500">Tidak ada data</div>
+                            )}
+                        </ChartCard>
 
                         {/* Section: Gelombang Rekrutmen (Top 15 Tahun) - Cohort Cards */}
                         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
@@ -145,13 +135,13 @@ export default function Tenure({ metrics }) {
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2">
-                                            <h3 className="font-bold text-gray-900 text-lg">Gelombang Rekrutmen (Top 15 Tahun)</h3>
+                                            <h3 className="font-bold text-gray-900 text-lg">Gelombang Rekrutmen per Angkatan</h3>
                                             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60">
                                                 {wavesData.length} Angkatan
                                             </span>
                                         </div>
                                         <p className="text-xs text-gray-500 mt-0.5">
-                                            Distribusi personil masuk dan status kepegawaian dominan per angkatan (cohort). Klik kartu tahun untuk memfilter dashboard.
+                                            Distribusi personil masuk dan status kepegawaian dominan per angkatan (cohort). Klik kartu tahun untuk melihat detail analisis dan daftar personil.
                                         </p>
                                     </div>
                                 </div>
@@ -163,22 +153,13 @@ export default function Tenure({ metrics }) {
                                         <span>Total:</span>
                                         <span className="font-bold text-gray-900">{formatNumber(totalWaveHC)} orang</span>
                                     </div>
-                                    {peakWave && (
-                                        <div className="px-3 py-1.5 rounded-xl bg-amber-50/70 border border-amber-200/60 text-xs flex items-center gap-1.5 text-amber-900 font-medium">
-                                            <TrendingUp size={13} className="text-amber-600" />
-                                            <span>Puncak:</span>
-                                            <span className="font-bold text-amber-950">Tahun {peakWave.year} ({formatNumber(peakWave.total)} org)</span>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
 
                             {/* Cohort Cards Grid */}
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
                                 {wavesData.map((row) => {
-                                    const isPeak = peakWave && row.year === peakWave.year;
                                     const pct = Math.round((row.total / maxWaveTotal) * 100);
-                                    const isSelected = hasFilter ? hasFilter('year', row.year) : false;
                                     const isProbation = row.dominant_type === 'PROBATION';
                                     const isPermanent = row.dominant_type === 'PERMANENT';
 
@@ -189,28 +170,18 @@ export default function Tenure({ metrics }) {
                                     return (
                                         <div
                                             key={row.year}
-                                            onClick={() => toggleFilter('year', row.year)}
-                                            className={`group relative p-4 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between ${
-                                                isSelected
-                                                    ? 'bg-emerald-50/80 border-emerald-500 shadow-sm ring-2 ring-emerald-500/20'
-                                                    : 'bg-white hover:bg-slate-50/70 border-gray-200/70 hover:border-emerald-300 shadow-2xs hover:shadow-sm'
-                                            }`}
-                                            title={`Tahun ${row.year}: ${formatNumber(row.total)} orang (${typesBreakdown}). Klik untuk filter.`}
+                                            onClick={() => setSelectedCohort(row)}
+                                            className="group relative p-4 rounded-xl border bg-white hover:bg-emerald-50/40 border-gray-200/80 hover:border-emerald-400 shadow-2xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between"
+                                            title={`Tahun ${row.year}: ${formatNumber(row.total)} orang (${typesBreakdown}). Klik untuk melihat detail & daftar personil.`}
                                         >
                                             {/* Top row: Year & Badge */}
                                             <div className="flex items-center justify-between gap-1.5 mb-2">
                                                 <span className="font-bold text-gray-900 text-base group-hover:text-emerald-700 transition-colors">
                                                     {row.year}
                                                 </span>
-                                                {isPeak ? (
-                                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/60 inline-flex items-center gap-0.5 shrink-0">
-                                                        <TrendingUp size={10} /> Terbanyak
-                                                    </span>
-                                                ) : isSelected ? (
-                                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 shrink-0">
-                                                        Terpilih
-                                                    </span>
-                                                ) : null}
+                                                <span className="text-[10px] font-semibold text-emerald-600 transition-opacity flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
+                                                    Detail <ArrowRight size={10} />
+                                                </span>
                                             </div>
 
                                             {/* Middle: Headcount number + Mini visual bar */}
@@ -224,13 +195,7 @@ export default function Tenure({ metrics }) {
 
                                                 <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2.5 overflow-hidden">
                                                     <div 
-                                                        className={`h-full rounded-full transition-all duration-500 ${
-                                                            isPeak 
-                                                                ? 'bg-gradient-to-r from-amber-500 to-emerald-600' 
-                                                                : isSelected 
-                                                                    ? 'bg-[#004D40]' 
-                                                                    : 'bg-emerald-600/70 group-hover:bg-[#004D40]'
-                                                        }`}
+                                                        className="h-full rounded-full transition-all duration-500 bg-emerald-600/70 group-hover:bg-[#004D40]"
                                                         style={{ width: `${Math.max(pct, 8)}%` }}
                                                     />
                                                 </div>
@@ -263,6 +228,23 @@ export default function Tenure({ metrics }) {
                     </div>
                 )}
             </Deferred>
+
+            {/* Modal Detail Angkatan Rekrutmen */}
+            {selectedCohort && (
+                <CohortDetailModal
+                    cohort={selectedCohort}
+                    onClose={() => setSelectedCohort(null)}
+                    onSelectEmployee={(empId) => setSelectedEmployeeId(empId)}
+                />
+            )}
+
+            {/* Modal Detail Profil Karyawan (Drilldown) */}
+            {selectedEmployeeId && (
+                <StaffDetailModal
+                    employeeId={selectedEmployeeId}
+                    onClose={() => setSelectedEmployeeId(null)}
+                />
+            )}
         </AppLayout>
     );
 }

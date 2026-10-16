@@ -7,7 +7,9 @@ const DEFAULT_KPI_DESCRIPTIONS = {
     'Rata-rata Umur': 'Rata-rata usia seluruh karyawan aktif dihitung dari tanggal lahir hingga saat ini (dalam satuan tahun).',
     'Rata-rata Masa Kerja': 'Rata-rata lama masa pengabdian kerja karyawan (Length of Service) dihitung sejak tanggal bergabung (join date).',
     'Risiko Pensiun': 'Jumlah karyawan yang berusia 55 tahun ke atas atau akan memasuki masa pensiun dalam waktu dekat (<= 5 tahun).',
-    'Karyawan Baru Belum Dilatih (<1 Tahun)': 'Karyawan dengan masa kerja di bawah 1 tahun yang belum tercatat memiliki riwayat pelatihan. Perlu diprioritaskan onboarding.',
+    'Karyawan Belum Pernah Training (<1 Tahun)': 'Karyawan dengan masa kerja di bawah 1 tahun yang belum tercatat memiliki riwayat training. Perlu diprioritaskan onboarding.',
+    'Karyawan Baru Belum Pernah Training (<1 Tahun)': 'Karyawan dengan masa kerja di bawah 1 tahun yang belum tercatat memiliki riwayat training. Perlu diprioritaskan onboarding.',
+    'Karyawan Baru Belum Dilatih (<1 Tahun)': 'Karyawan dengan masa kerja di bawah 1 tahun yang belum tercatat memiliki riwayat training. Perlu diprioritaskan onboarding.',
     'Karyawan Baru Masuk Tahun Ini': 'Jumlah karyawan baru yang direkrut dan mulai aktif bekerja terhitung sejak awal tahun kalender berjalan.',
     'Total Jam Pelatihan': 'Akumulasi total jam pelatihan dari seluruh sesi yang berhasil terhubung dengan data master karyawan.',
     'Training Coverage': 'Persentase perbandingan antara karyawan yang telah mengikuti minimal satu pelatihan terhadap total seluruh karyawan aktif.',
@@ -40,8 +42,8 @@ function resolveKpiDescription(title, explicitDesc) {
     if (lower.includes('pensiun')) {
         return 'Jumlah karyawan berisiko pensiun (usia 55 tahun ke atas).';
     }
-    if (lower.includes('belum dilatih')) {
-        return 'Karyawan masa kerja < 1 tahun yang belum tercatat pernah mengikuti pelatihan.';
+    if (lower.includes('belum pernah training') || lower.includes('belum training') || lower.includes('belum dilatih')) {
+        return 'Karyawan masa kerja < 1 tahun yang belum tercatat pernah mengikuti training.';
     }
     if (lower.includes('karyawan baru') || lower.includes('new hire')) {
         return 'Karyawan yang baru bergabung pada periode tahun kalender berjalan.';
@@ -76,7 +78,7 @@ export function KpiCard({ title, value, unit = '', note = '', highlight = false,
     }
 
     const tlLower = title.toLowerCase();
-    const needsAttention = tlLower.includes('risiko') || tlLower.includes('belum dilatih') || tlLower.includes('anomali') || highlight;
+    const needsAttention = tlLower.includes('risiko') || tlLower.includes('belum pernah training') || tlLower.includes('belum training') || tlLower.includes('belum dilatih') || tlLower.includes('anomali') || highlight;
     const borderClass = needsAttention ? 'border border-amber-500' : 'border border-[#40826D]/40';
     const iconBgClass = needsAttention ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-[#40826D]';
 

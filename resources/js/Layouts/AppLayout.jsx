@@ -20,12 +20,15 @@ import {
     FileSpreadsheet,
     Activity,
     Layers,
-    UserCheck
+    UserCheck,
+    UserCog
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function AppLayout({ children, fullHeight = false, title = '' }) {
     const { auth } = usePage().props;
+    const canImport = auth?.user?.can_import ?? false;
+    const canManageUsers = auth?.user?.can_manage_users ?? false;
     const [collapsed, setCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -49,6 +52,7 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
         if (currentUrl.startsWith('/analisis-gabungan')) return { section: 'Analitik SDM', page: 'Analisis Gabungan' };
         if (currentUrl.startsWith('/admin/kualitas-data')) return { section: 'Data & Sistem', page: 'Kualitas Data' };
         if (currentUrl.startsWith('/admin/import')) return { section: 'Data & Sistem', page: 'Import & Sinkronisasi' };
+        if (currentUrl.startsWith('/admin/users')) return { section: 'Admin', page: 'Manajemen Akun' };
         if (currentUrl.startsWith('/pengaturan')) return { section: 'Pengaturan', page: 'Pengaturan Akun' };
         return { section: 'Peta SDM', page: title || 'Aplikasi' };
     };
@@ -186,7 +190,8 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
                     <NavItem href="/karyawan" icon={Contact} label="Direktori Karyawan" />
                     <NavItem href="/pelatihan/data" icon={FileSpreadsheet} label="Data Training Mentah" />
                     <NavItem href="/admin/kualitas-data" icon={ShieldCheck} label="Kualitas Data" />
-                    <NavItem href="/admin/import" icon={UploadCloud} label="Import & Sinkronisasi" />
+                    {canImport && <NavItem href="/admin/import" icon={UploadCloud} label="Import & Sinkronisasi" />}
+                    {canManageUsers && <NavItem href="/admin/users" icon={UserCog} label="Manajemen Akun" />}
                 </div>
 
                 {/* Sidebar Footer / User Profile & Logout */}
@@ -232,16 +237,18 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
                     
                     {/* Header Right Tools */}
                     <div className="flex items-center gap-4">
-                        {/* Status Badge */}
-                        <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60 text-xs font-medium">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            <span>Peta SDM Aktif</span>
-                        </div>
 
                         {/* User Profile Info */}
                         <div className="text-right hidden sm:block">
                             <p className="text-xs font-bold text-gray-900 leading-tight">{auth?.user?.name || 'Administrator'}</p>
-                            <p className="text-[10px] text-gray-400 font-medium">HR Analytics</p>
+                            <p className="text-[10px] text-gray-400 font-mono font-medium leading-tight mt-0.5">
+                                {auth?.user?.nik ? `NIK: ${auth.user.nik}` : '-'}
+                            </p>
+                            {(auth?.user?.job_title || auth?.user?.employee?.job_title_name) && (
+                                <p className="text-[10px] text-gray-500 font-medium leading-tight truncate max-w-[180px]" title={auth.user.job_title || auth.user.employee?.job_title_name}>
+                                    {auth.user.job_title || auth.user.employee?.job_title_name}
+                                </p>
+                            )}
                         </div>
 
                         {/* User Profile Avatar & Dropdown */}
@@ -261,15 +268,41 @@ export default function AppLayout({ children, fullHeight = false, title = '' }) 
                                         className="fixed inset-0 z-40" 
                                         onClick={() => setDropdownOpen(false)}
                                     />
-                                    <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl py-1.5 border border-gray-100 z-50 overflow-hidden origin-top-right animate-in fade-in zoom-in-95 duration-100">
+                                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl py-1.5 border border-gray-100 z-50 overflow-hidden origin-top-right animate-in fade-in zoom-in-95 duration-100">
                                         <div className="px-4 py-2.5 border-b border-gray-100">
-                                            <p className="text-xs font-bold text-gray-900">{auth?.user?.name || 'Administrator'}</p>
-                                            <p className="text-[10px] text-gray-400 truncate">{auth?.user?.email || 'admin@first-resources.com'}</p>
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-xs font-bold text-gray-900 truncate max-w-[130px]">{auth?.user?.name || 'Administrator'}</p>
+                                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                                                    auth?.user?.role === 'superadmin' ? 'bg-purple-100 text-purple-700' :
+                                                    auth?.user?.role === 'manajemen' ? 'bg-amber-100 text-amber-700' :
+                                                    'bg-sky-100 text-sky-700'
+                                                }`}>
+                                                    {auth?.user?.role || 'Viewer'}
+                                                </span>
+                                            </div>
+                                            <p className="text-[10px] text-gray-400 font-mono mt-0.5">
+                                                NIK: {auth?.user?.nik || '-'}
+                                            </p>
+                                            {auth?.user?.employee?.job_title_name && (
+                                                <p className="text-[10px] text-gray-600 font-medium mt-0.5 truncate" title={auth.user.employee.job_title_name}>
+                                                    {auth.user.employee.job_title_name}
+                                                </p>
+                                            )}
                                         </div>
+
+                                        {canManageUsers && (
+                                            <Link 
+                                                href="/admin/users"
+                                                className="px-4 py-2 text-xs text-purple-700 hover:bg-purple-50 flex items-center gap-2.5 font-bold transition-colors"
+                                            >
+                                                <UserCog size={15} className="text-purple-600" />
+                                                Manajemen Akun
+                                            </Link>
+                                        )}
 
                                         <Link 
                                             href="/pengaturan"
-                                            className="px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2.5 font-medium transition-colors"
+                                            className="px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2.5 font-medium transition-colors"
                                         >
                                             <Settings size={15} className="text-gray-400" />
                                             Pengaturan Akun

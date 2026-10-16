@@ -30,12 +30,12 @@ export function InfoTooltip({ title, text, position = 'bottom', className = '' }
         // Determine vertical placement: open bottom by default, or top if not enough room below
         const spaceBelow = window.innerHeight - rect.bottom;
         const spaceAbove = rect.top;
-        const estimatedHeight = 130;
+        const estimatedHeight = tooltipRef.current?.offsetHeight || 250;
 
         let placement = position;
         let top = 0;
 
-        if (position === 'top' || (spaceBelow < estimatedHeight + 16 && spaceAbove > estimatedHeight + 16)) {
+        if (position === 'top' || (spaceBelow < estimatedHeight + 16 && spaceAbove > 80)) {
             placement = 'top';
             top = rect.top - 8;
         } else {
@@ -50,6 +50,9 @@ export function InfoTooltip({ title, text, position = 'bottom', className = '' }
         if (!visible) return;
 
         updatePosition();
+        const raf = requestAnimationFrame(() => {
+            updatePosition();
+        });
 
         const handleScrollOrResize = () => {
             updatePosition();
@@ -70,6 +73,7 @@ export function InfoTooltip({ title, text, position = 'bottom', className = '' }
         document.addEventListener('touchstart', handleClickOutside);
 
         return () => {
+            cancelAnimationFrame(raf);
             window.removeEventListener('scroll', handleScrollOrResize, true);
             window.removeEventListener('resize', handleScrollOrResize);
             document.removeEventListener('mousedown', handleClickOutside);
@@ -112,9 +116,10 @@ export function InfoTooltip({ title, text, position = 'bottom', className = '' }
                         bottom: coords.placement === 'top' ? `${window.innerHeight - coords.top}px` : 'auto',
                         left: `${coords.left}px`,
                         width: `${coords.width}px`,
+                        maxHeight: 'calc(100vh - 24px)',
                         zIndex: 9999,
                     }}
-                    className="p-3.5 bg-white text-gray-800 text-xs rounded-xl shadow-[0_12px_32px_rgba(0,0,0,0.15)] border border-gray-200 transition-all animate-in fade-in zoom-in-95 duration-100 normal-case font-normal text-left pointer-events-auto"
+                    className="p-3.5 bg-white text-gray-800 text-xs rounded-xl shadow-[0_12px_32px_rgba(0,0,0,0.15)] border border-gray-200 transition-all animate-in fade-in zoom-in-95 duration-100 normal-case font-normal text-left pointer-events-auto overflow-y-auto"
                     role="tooltip"
                     onMouseEnter={() => setVisible(true)}
                     onMouseLeave={() => setVisible(false)}

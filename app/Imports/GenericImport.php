@@ -3,12 +3,13 @@
 namespace App\Imports;
 
 use Maatwebsite\Excel\Concerns\ToArray;
+use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use PhpOffice\PhpSpreadsheet\Cell\Cell;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
 
-class GenericImport extends DefaultValueBinder implements ToArray, WithCustomValueBinder
+class GenericImport extends DefaultValueBinder implements ToArray, WithCalculatedFormulas, WithCustomValueBinder
 {
     public function array(array $array): void
     {

@@ -15,7 +15,7 @@ class TenureMetrics
         $query = $filter->apply($query, $request);
 
         $employees = $query->get([
-            'birth_date', 'join_date', 'region', 'job_level_code', 'employment_type',
+            'birth_date', 'join_date', 'region', 'job_level_code', 'employment_type', 'gender',
         ]);
 
         if ($employees->isEmpty()) {
@@ -105,11 +105,31 @@ class TenureMetrics
             $heatmap[$jYear][$reg] = ($heatmap[$jYear][$reg] ?? 0) + 1;
 
             if (! isset($waves[$jYear])) {
-                $waves[$jYear] = ['total' => 0, 'types' => []];
+                $waves[$jYear] = [
+                    'total' => 0,
+                    'types' => [],
+                    'levels' => [],
+                    'regions' => [],
+                    'genders' => [],
+                    'join_ages_sum' => 0,
+                    'tenures_sum' => 0,
+                ];
             }
             $waves[$jYear]['total']++;
             $etype = $e->employment_type ?? 'Unknown';
             $waves[$jYear]['types'][$etype] = ($waves[$jYear]['types'][$etype] ?? 0) + 1;
+
+            $lvl = $e->job_level_code ?? '-';
+            $waves[$jYear]['levels'][$lvl] = ($waves[$jYear]['levels'][$lvl] ?? 0) + 1;
+
+            $regVal = $e->region ?? 'Unknown';
+            $waves[$jYear]['regions'][$regVal] = ($waves[$jYear]['regions'][$regVal] ?? 0) + 1;
+
+            $genVal = $e->gender ?? 'Unknown';
+            $waves[$jYear]['genders'][$genVal] = ($waves[$jYear]['genders'][$genVal] ?? 0) + 1;
+
+            $waves[$jYear]['join_ages_sum'] += $joinAge;
+            $waves[$jYear]['tenures_sum'] += $tenureFloat;
         }
 
         ksort($joinYearly);
@@ -138,12 +158,22 @@ class TenureMetrics
         $recruitmentWaves = [];
         foreach ($waves as $year => $data) {
             arsort($data['types']);
-            $dominant = array_key_first($data['types']);
+            ksort($data['levels']);
+            arsort($data['regions']);
+            arsort($data['genders']);
+            $dominant = array_key_first($data['types']) ?? 'PERMANENT';
+            $count = max($data['total'], 1);
+
             $recruitmentWaves[] = [
                 'year' => (string) $year,
                 'total' => $data['total'],
                 'dominant_type' => $dominant,
                 'types' => $data['types'],
+                'levels' => $data['levels'],
+                'regions' => $data['regions'],
+                'genders' => $data['genders'],
+                'avg_join_age' => round($data['join_ages_sum'] / $count, 1),
+                'avg_tenure' => round($data['tenures_sum'] / $count, 1),
             ];
         }
 
@@ -161,7 +191,7 @@ class TenureMetrics
             ],
             'scatter' => $scatter,
             'heatmap' => $heatmap,
-            'waves' => array_slice($recruitmentWaves, 0, 15),
+            'waves' => $recruitmentWaves,
         ];
     }
 

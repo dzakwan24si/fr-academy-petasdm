@@ -3,7 +3,6 @@ import { Head, Deferred } from '@inertiajs/react';
 import FilterBar from '@/Components/ui/FilterBar';
 import { ChartCard } from '@/Components/ui/ChartCard';
 import { HorizontalBar } from '@/Components/charts/HorizontalBar';
-import { ScatterChart } from '@/Components/charts/ScatterChart';
 import { defaultPalette } from '@/lib/colors';
 import { formatNumber, formatDecimal } from '@/lib/format';
 import { Info, Search, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X, Briefcase, Building2 } from 'lucide-react';
@@ -63,14 +62,14 @@ export default function Combined({ metrics }) {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <ChartCard title="Coverage Pelatihan per Region (%)">
                                 <HorizontalBar 
-                                    data={metrics.coverage.region.map(d => ({ name: d.name, value: d.pct }))} 
+                                    data={metrics.coverage.region.filter(d => (d.pct || 0) > 0).map(d => ({ name: d.name, value: d.pct }))} 
                                     color={defaultPalette[0]} 
                                     onClick={(entry) => toggleFilter('region', entry.name)}
                                 />
                             </ChartCard>
                             <ChartCard title="Coverage Pelatihan per Level (%)">
                                 <HorizontalBar 
-                                    data={metrics.coverage.level.map(d => ({ 
+                                    data={metrics.coverage.level.filter(d => (d.pct || 0) > 0).map(d => ({ 
                                         name: String(d.name).startsWith('Level') ? d.name : `Level ${d.name}`, 
                                         level: d.name,
                                         value: d.pct,
@@ -85,14 +84,14 @@ export default function Combined({ metrics }) {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <ChartCard title="Coverage Pelatihan per Departemen (Top 10)">
                                 <HorizontalBar 
-                                    data={metrics.coverage.dept.slice(0, 10).map(d => ({ name: d.name, value: d.pct }))} 
+                                    data={metrics.coverage.dept.filter(d => (d.pct || 0) > 0).slice(0, 10).map(d => ({ name: d.name, value: d.pct }))} 
                                     color={defaultPalette[2]} 
                                     onClick={(entry) => toggleFilter('organization_name', entry.name)}
                                 />
                             </ChartCard>
                             <ChartCard title="Coverage Pelatihan per Perusahaan (Top 10)">
                                 <HorizontalBar 
-                                    data={metrics.coverage.company.slice(0, 10).map(d => ({ name: d.name, value: d.pct }))} 
+                                    data={metrics.coverage.company.filter(d => (d.pct || 0) > 0).slice(0, 10).map(d => ({ name: d.name, value: d.pct }))} 
                                     color={defaultPalette[3]} 
                                     onClick={(entry) => {
                                         const comp = options?.companies?.find(c => c.name === entry.name || c.code === entry.name);
@@ -106,14 +105,14 @@ export default function Combined({ metrics }) {
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <ChartCard title="Rata-rata Jam per Generasi">
                                 <HorizontalBar 
-                                    data={metrics.hours.generation.map(d => ({ name: d.name, value: d.avg_hours }))} 
+                                    data={metrics.hours.generation.filter(d => (d.avg_hours || 0) > 0).map(d => ({ name: d.name, value: d.avg_hours }))} 
                                     color={defaultPalette[4]} 
                                     onClick={(entry) => toggleFilter('generation', entry.name)}
                                 />
                             </ChartCard>
                             <ChartCard title="Rata-rata Jam per Level">
                                 <HorizontalBar 
-                                    data={metrics.hours.level.map(d => ({ 
+                                    data={metrics.hours.level.filter(d => (d.avg_hours || 0) > 0).map(d => ({ 
                                         name: String(d.name).startsWith('Level') ? d.name : `Level ${d.name}`, 
                                         level: d.name,
                                         value: d.avg_hours,
@@ -125,7 +124,7 @@ export default function Combined({ metrics }) {
                             </ChartCard>
                             <ChartCard title="Rata-rata Jam per Gender">
                                 <HorizontalBar 
-                                    data={metrics.hours.gender.map(d => ({ name: d.name, value: d.avg_hours }))} 
+                                    data={metrics.hours.gender.filter(d => (d.avg_hours || 0) > 0).map(d => ({ name: d.name, value: d.avg_hours }))} 
                                     color={defaultPalette[6]} 
                                     onClick={(entry) => toggleFilter('gender', entry.name)}
                                 />
@@ -137,7 +136,7 @@ export default function Combined({ metrics }) {
                             <div className="lg:col-span-1 space-y-6">
                                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-full flex flex-col justify-center">
                                     <h3 className="font-bold text-gray-800 mb-2">Karyawan Baru (&lt; 1 Tahun)</h3>
-                                    <p className="text-sm text-gray-500 mb-4">Yang belum tercatat mengikuti pelatihan sama sekali.</p>
+                                    <p className="text-sm text-gray-500 mb-4">Yang belum tercatat mengikuti training sama sekali.</p>
                                     <p className="text-4xl font-bold text-red-600">{formatNumber(metrics.new_hire_no_training)} <span className="text-base font-normal text-gray-600">orang</span></p>
                                 </div>
                             </div>
@@ -172,14 +171,7 @@ export default function Combined({ metrics }) {
                             </div>
                         </div>
 
-                        {/* Section 4: Scatter */}
-                        <div className="grid grid-cols-1 gap-6">
-                            <ChartCard title="Korelasi Masa Kerja vs Total Jam Pelatihan" height="h-96">
-                                <ScatterChart data={metrics.scatter} xKey="masa_kerja" yKey="jam_pelatihan" zKey="none" xLabel="Masa Kerja" yLabel="Total Jam Pelatihan" />
-                            </ChartCard>
-                        </div>
-
-                        {/* Section 5: Company Ranking */}
+                        {/* Section 4: Company Ranking */}
                         <CompanyRankingTable 
                             data={metrics.company_ranking || []}
                             onSelectCompany={(comp) => {

@@ -280,6 +280,16 @@ class WorkforceMetrics
         }
         unset($tList);
 
+        $configuredOrder = config('sdm.level_order', []);
+        $existingLevels = array_unique(array_filter(array_merge(
+            array_keys($hcByLevel),
+            array_keys($generationsByLevel)
+        ), fn ($lvl) => $lvl !== 'Unknown' && $lvl !== '-' && ! empty($lvl)));
+        $existingInConfig = array_values(array_intersect($configuredOrder, $existingLevels));
+        $otherExisting = array_values(array_diff($existingLevels, $configuredOrder));
+        sort($otherExisting);
+        $dynamicLevelOrder = array_merge($existingInConfig, $otherExisting);
+
         return [
             'total_hc' => $totalHc,
             'avg_age' => round($avgAge, 1),
@@ -307,7 +317,7 @@ class WorkforceMetrics
             'job_titles' => $jobTitles,
             'employment_by_region' => $employmentByRegion,
             'birth_places' => $birthPlaces,
-            'level_order' => config('sdm.level_order', []),
+            'level_order' => ! empty($dynamicLevelOrder) ? $dynamicLevelOrder : $configuredOrder,
             'training' => [
                 'total_hours' => $totalTrainingHours,
                 'coverage_pct' => $trainingCoverage,

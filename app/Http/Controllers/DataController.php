@@ -225,6 +225,57 @@ class DataController extends Controller
         return response()->json($employees);
     }
 
+    public function cohortEmployees(Request $request, int $year, EmployeeFilter $filter)
+    {
+        $query = Employee::query()->whereYear('join_date', $year);
+        $query = $filter->apply($query, $request);
+
+        if ($request->filled('search')) {
+            $s = $request->input('search');
+            $query->where(function ($q) use ($s) {
+                $q->where('name', 'like', "%{$s}%")
+                    ->orWhere('employee_id', 'like', "%{$s}%")
+                    ->orWhere('job_title_name', 'like', "%{$s}%");
+            });
+        }
+
+        if ($request->filled('level')) {
+            $query->where('job_level_code', $request->input('level'));
+        }
+
+        if ($request->filled('employment_type')) {
+            $query->where('employment_type', $request->input('employment_type'));
+        }
+
+        if ($request->filled('region')) {
+            $query->where('region', $request->input('region'));
+        }
+
+        $employees = $query->with('company:id,code,name')->orderBy('name')->paginate(15);
+
+        $employees->getCollection()->transform(function ($e) {
+            return [
+                'id' => $e->id,
+                'employee_id' => $e->employee_id,
+                'name' => $e->name,
+                'job_title_name' => $e->job_title_name,
+                'job_level_code' => $e->job_level_code,
+                'department' => $e->organization_name,
+                'company_code' => $e->company?->code ?? '-',
+                'company_name' => $e->company?->name ?? '-',
+                'region' => $e->region,
+                'gender' => $e->gender,
+                'employment_type' => $e->employment_type,
+                'join_date' => $e->join_date ? Carbon::parse($e->join_date)->translatedFormat('d M Y') : '-',
+                'age' => Demographics::ageFullYears(Carbon::parse($e->birth_date)),
+                'los' => Demographics::losFullYears(Carbon::parse($e->join_date)),
+                'photo_url' => $e->photo_url,
+            ];
+        });
+
+        return response()->json($employees);
+    }
+
     public function employeeDetail(Request $request, string $employee_id, EmployeeFilter $filter)
     {
         $user = $request->user();

@@ -154,6 +154,7 @@ export default function Retirement({ metrics }) {
                                                             {row.total_titles > 0 && (
                                                                 <span onClick={(e) => e.stopPropagation()}>
                                                                     <InfoTooltip 
+                                                                        position="top"
                                                                         title={`Komposisi Jabatan - Level ${row.name}`}
                                                                         text={
                                                                             <div className="space-y-1.5 text-xs">

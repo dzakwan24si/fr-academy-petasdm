@@ -25,7 +25,10 @@ import {
     AlertCircle,
     Info,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Trash2,
+    Download,
+    FileText
 } from 'lucide-react';
 
 function formatDateTime(dateString) {
@@ -53,7 +56,7 @@ function formatFileSize(bytes) {
 }
 
 export default function Import() {
-    const { batches = [], portalSyncConfig } = usePage().props;
+    const { batches = [], portalSyncConfig, counts = { employee: 0, training: 0 }, flash } = usePage().props;
     const [isDragging, setIsDragging] = useState(false);
     const [tableFilter, setTableFilter] = useState('all'); // all | portal | manual
     const [searchQuery, setSearchQuery] = useState('');
@@ -64,15 +67,59 @@ export default function Import() {
     const { data, setData, post, processing, errors, reset } = useForm({
         type: 'employee',
         file: null,
+        replace_all: false,
     });
 
     const { post: postSync, processing: syncProcessing, errors: syncErrors } = useForm({});
+
+    const [resetModal, setResetModal] = useState({
+        isOpen: false,
+        target: 'employee',
+    });
+    const { 
+        data: resetForm, 
+        setData: setResetForm, 
+        post: postReset, 
+        processing: resetProcessing, 
+        errors: resetErrors, 
+        reset: clearResetForm,
+        clearErrors: clearResetErrors,
+    } = useForm({
+        target: 'employee',
+        confirmation: '',
+    });
+
+    const openResetModal = (target) => {
+        clearResetErrors();
+        setResetForm({
+            target,
+            confirmation: '',
+        });
+        setResetModal({ isOpen: true, target });
+    };
+
+    const closeResetModal = () => {
+        if (resetProcessing) return;
+        setResetModal({ isOpen: false, target: 'employee' });
+        clearResetForm();
+        clearResetErrors();
+    };
+
+    const handleConfirmReset = (e) => {
+        e.preventDefault();
+        postReset('/admin/import/reset', {
+            preserveScroll: true,
+            onSuccess: () => {
+                closeResetModal();
+            },
+        });
+    };
 
     const submit = (e) => {
         e.preventDefault();
         post('/admin/import', {
             onSuccess: () => {
-                reset('file');
+                reset('file', 'replace_all');
                 if (fileInputRef.current) fileInputRef.current.value = '';
             },
         });
@@ -182,6 +229,24 @@ export default function Import() {
                     </Link>
                 </div>
             </div>
+
+            {/* Flash Messages */}
+            {flash?.success && (
+                <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900 shadow-xs flex items-center justify-between gap-3 animate-in fade-in duration-200">
+                    <div className="flex items-center gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                        <span className="text-sm font-medium">{flash.success}</span>
+                    </div>
+                </div>
+            )}
+            {flash?.error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-900 shadow-xs flex items-center justify-between gap-3 animate-in fade-in duration-200">
+                    <div className="flex items-center gap-3">
+                        <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+                        <span className="text-sm font-medium">{flash.error}</span>
+                    </div>
+                </div>
+            )}
 
             {/* 4 Executive Summary Metric Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -457,7 +522,18 @@ export default function Import() {
                         <form id="manual-upload-form" onSubmit={submit} className="space-y-4">
                             {/* Segmented Radio Options for Data Type */}
                             <div>
-                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Pilih Kategori Data:</label>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="block text-xs font-semibold text-gray-700">Pilih Kategori Data:</label>
+                                    <a
+                                        href={`/admin/import/template/${data.type}`}
+                                        download
+                                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100/80 px-2.5 py-0.5 rounded-lg border border-emerald-200/80 transition-colors"
+                                        title={`Unduh format Excel standar untuk ${data.type === 'employee' ? 'Data Karyawan' : 'Data Pelatihan'}`}
+                                    >
+                                        <Download size={12} />
+                                        <span>Unduh Template {data.type === 'employee' ? 'Karyawan' : 'Pelatihan'} (.xlsx)</span>
+                                    </a>
+                                </div>
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
                                         type="button"
@@ -494,7 +570,7 @@ export default function Import() {
                                     <div>
                                         {data.type === 'employee' ? (
                                             <p className="leading-relaxed">
-                                                <strong>Metode Upsert:</strong> File karyawan yang diunggah akan memperbarui atau menambah data per <strong>Employee ID</strong>. Karyawan yang tidak ada dalam file baru <strong>tidak dihapus</strong> secara otomatis.
+                                                <strong>Mode Normal (Upsert):</strong> File karyawan akan memperbarui atau menambah data per <strong>Employee ID</strong>. Data lama di luar file tidak dihapus secara otomatis kecuali opsi ganti total di bawah dicentang.
                                             </p>
                                         ) : (
                                             <p className="leading-relaxed">
@@ -504,6 +580,28 @@ export default function Import() {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Checkbox Ganti Total (Replace All) Khusus Karyawan */}
+                            {data.type === 'employee' && (
+                                <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl">
+                                    <label className="flex items-start gap-2.5 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={data.replace_all}
+                                            onChange={(e) => setData('replace_all', e.target.checked)}
+                                            className="mt-0.5 w-4 h-4 rounded text-[#004D40] focus:ring-emerald-500 border-gray-300 cursor-pointer"
+                                        />
+                                        <div className="text-xs">
+                                            <span className="font-bold text-amber-950">
+                                                Ganti total data karyawan (Kosongkan data lama)
+                                            </span>
+                                            <p className="text-amber-800 text-[11px] mt-0.5 leading-relaxed">
+                                                Centang opsi ini jika file baru Anda hanya berisi level tertentu (misal: <strong>Level C–F saja</strong>). Sistem akan menghapus seluruh data karyawan lama terlebih dahulu sebelum mengisi data baru, sehingga data lama di luar level tersebut tidak nyangkut.
+                                            </p>
+                                        </div>
+                                    </label>
+                                </div>
+                            )}
 
                             {/* Drag and Drop Upload Zone */}
                             <div>
@@ -576,6 +674,14 @@ export default function Import() {
                                 )}
 
                                 {errors.file && <p className="text-red-600 text-xs font-medium mt-1.5">{errors.file}</p>}
+
+                                {/* Tips Format & Rumus Excel */}
+                                <div className="mt-3 p-3 bg-amber-50/70 border border-amber-200/70 rounded-xl text-[11.5px] text-amber-900 flex items-start gap-2">
+                                    <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+                                    <div className="leading-relaxed">
+                                        <strong>Penting (Paste as Values):</strong> Jika Anda mengolah data menggunakan rumus Excel (seperti <code>VLOOKUP</code> / <code>IFERROR</code>), pastikan melakukan <strong>Copy &gt; Paste as Values (Tempel Nilai)</strong> sebelum menyimpan agar rumus tidak terbaca sebagai teks mentah.
+                                    </div>
+                                </div>
                             </div>
                         </form>
                     </div>
@@ -597,10 +703,170 @@ export default function Import() {
                                 <>
                                     <UploadCloud size={16} className="text-emerald-200" />
                                     <span>
-                                        {data.type === 'employee' ? 'Jalankan Impor Data Karyawan' : 'Jalankan Impor Data Pelatihan'}
+                                        {data.type === 'employee' 
+                                            ? (data.replace_all ? 'Ganti Total & Impor Karyawan' : 'Jalankan Impor Data Karyawan')
+                                            : 'Jalankan Impor Data Pelatihan'}
                                     </span>
                                 </>
                             )}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Template Berkas & Panduan Format Standar */}
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-2xs mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-4 border-b border-gray-100">
+                    <div className="flex items-start gap-3">
+                        <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl">
+                            <FileSpreadsheet className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h2 className="text-base font-bold text-gray-900">Template Berkas &amp; Format Standar Excel</h2>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                                Unduh template resmi sistem untuk memastikan susunan kolom, nama header, dan format data sesuai standar import.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    {/* Card Template Karyawan */}
+                    <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50/30 flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                                    <Users size={14} className="text-emerald-700" />
+                                    Template Data Karyawan (.xlsx)
+                                </span>
+                                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full border border-emerald-200">
+                                    22 Kolom Standar
+                                </span>
+                            </div>
+                            <p className="text-xs text-emerald-900/80 leading-relaxed mb-3">
+                                Format baku data karyawan (Employee ID, Join Date, Level C–F, Company Code, Group, Region, dll.) lengkap dengan contoh baris yang valid.
+                            </p>
+                        </div>
+                        <a
+                            href="/admin/import/template/employee"
+                            download
+                            className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-white bg-[#004D40] hover:bg-[#00382e] rounded-xl transition-all shadow-xs cursor-pointer"
+                        >
+                            <Download size={14} />
+                            <span>Unduh Template Karyawan (.xlsx)</span>
+                        </a>
+                    </div>
+
+                    {/* Card Template Pelatihan */}
+                    <div className="p-4 rounded-xl border border-teal-100 bg-teal-50/30 flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-bold text-teal-950 flex items-center gap-1.5">
+                                    <GraduationCap size={14} className="text-teal-700" />
+                                    Template Data Pelatihan (.xlsx)
+                                </span>
+                                <span className="text-[10px] font-semibold text-teal-700 bg-teal-100/70 px-2 py-0.5 rounded-full border border-teal-200">
+                                    23 Kolom Standar
+                                </span>
+                            </div>
+                            <p className="text-xs text-teal-900/80 leading-relaxed mb-3">
+                                Format rekaman pelatihan operasional (Event ID, Batch ID, NIK, Judul Pelatihan, Tanggal, Jam Efektif, dll.) dengan relasi NIK ke karyawan.
+                            </p>
+                        </div>
+                        <a
+                            href="/admin/import/template/training"
+                            download
+                            className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-teal-900 bg-teal-100 hover:bg-teal-200 border border-teal-200 rounded-xl transition-all cursor-pointer"
+                        >
+                            <Download size={14} />
+                            <span>Unduh Template Pelatihan (.xlsx)</span>
+                        </a>
+                    </div>
+                </div>
+
+                {/* Ketentuan Format */}
+                <div className="p-3.5 bg-gray-50 border border-gray-200/70 rounded-xl">
+                    <h4 className="text-xs font-bold text-gray-800 mb-2 flex items-center gap-1.5">
+                        <Info size={13} className="text-gray-500" />
+                        Ketentuan Penting Pengisian Berkas:
+                    </h4>
+                    <ul className="text-xs text-gray-600 space-y-1.5 list-disc list-inside">
+                        <li><strong>Susunan &amp; Nama Kolom:</strong> Jangan mengubah, menambah, atau menghapus urutan 22 kolom di baris 1 (Header).</li>
+                        <li><strong>Tempel sebagai Nilai (Paste Values):</strong> Jika Anda mengisi kolom seperti Group &amp; Region menggunakan formula (misal <code>=VLOOKUP()</code> atau <code>=IFERROR()</code>), pastikan lakukan <em>Copy &gt; Paste Special &gt; Values</em> sebelum disimpan. Sistem kini juga otomatis memproteksi dan memetakan formula ke nilai standar bila terdeteksi.</li>
+                        <li><strong>Format Tanggal:</strong> Gunakan format tanggal standar Excel atau teks <code>YYYY-MM-DD</code> (contoh: <code>2024-01-15</code>).</li>
+                        <li><strong>Update Khusus Level C–F:</strong> Jika file baru Anda hanya berisi level C–F, aktifkan opsi <strong>"Ganti total data karyawan"</strong> saat impor agar data level lain yang lama bersih secara menyeluruh.</li>
+                    </ul>
+                </div>
+            </div>
+
+            {/* Zona Pembersihan Data Master */}
+            <div className="bg-white p-6 rounded-2xl border border-red-100 shadow-2xs mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-4 border-b border-gray-100">
+                    <div className="flex items-start gap-3">
+                        <div className="p-2.5 bg-red-50 text-red-600 rounded-xl">
+                            <AlertTriangle className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h2 className="text-base font-bold text-gray-900">Pembersihan Data Master (Reset)</h2>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                                Hapus atau kosongkan data lama di database jika ingin memulai ulang dengan data baru yang bersih.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Card Hapus Data Karyawan */}
+                    <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/50 flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                                    <Users size={14} className="text-gray-500" />
+                                    Master Data Karyawan
+                                </span>
+                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-200/80 text-gray-700">
+                                    {(counts?.employee || 0).toLocaleString('id-ID')} baris
+                                </span>
+                            </div>
+                            <p className="text-xs text-gray-600 leading-relaxed mb-4">
+                                Menghapus seluruh data master karyawan yang ada saat ini. Cocok digunakan jika Anda ingin membersihkan data lama sebelum mengunggah file baru yang hanya berisi level tertentu (misal: <strong>Level C–F saja</strong>).
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => openResetModal('employee')}
+                            disabled={(counts?.employee || 0) === 0}
+                            className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100/80 border border-red-200 rounded-xl transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <Trash2 size={14} />
+                            <span>Hapus Semua Data Karyawan</span>
+                        </button>
+                    </div>
+
+                    {/* Card Hapus Data Pelatihan */}
+                    <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/50 flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                                    <GraduationCap size={14} className="text-gray-500" />
+                                    Rekam Data Pelatihan
+                                </span>
+                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-200/80 text-gray-700">
+                                    {(counts?.training || 0).toLocaleString('id-ID')} baris
+                                </span>
+                            </div>
+                            <p className="text-xs text-gray-600 leading-relaxed mb-4">
+                                Mengosongkan seluruh riwayat pelatihan dari database. Anda dapat mengimpor kembali melalui berkas spreadsheet atau menarik ulang snapshot terbaru dari Portal FR Academy.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => openResetModal('training')}
+                            disabled={(counts?.training || 0) === 0}
+                            className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100/80 border border-red-200 rounded-xl transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <Trash2 size={14} />
+                            <span>Hapus Semua Data Pelatihan</span>
                         </button>
                     </div>
                 </div>
@@ -908,6 +1174,115 @@ export default function Import() {
                     </div>
                 )}
             </div>
+
+            {/* Modal Konfirmasi Hapus / Reset Data */}
+            {resetModal.isOpen && (
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+                    onClick={closeResetModal}
+                >
+                    <div 
+                        className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 relative animate-in zoom-in-95 duration-150"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-start gap-4 mb-4">
+                            <div className="p-3 bg-red-100 text-red-700 rounded-2xl shrink-0">
+                                <AlertTriangle className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900">
+                                    {resetModal.target === 'employee' && 'Konfirmasi Hapus Data Karyawan'}
+                                    {resetModal.target === 'training' && 'Konfirmasi Hapus Data Pelatihan'}
+                                    {resetModal.target === 'all' && 'Konfirmasi Hapus Seluruh Data'}
+                                </h3>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Tindakan ini bersifat permanen dan tidak dapat dibatalkan.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="p-4 bg-red-50/70 border border-red-200/80 rounded-xl text-xs text-red-900 space-y-2 mb-4">
+                            {resetModal.target === 'employee' && (
+                                <>
+                                    <p className="font-semibold">
+                                        Anda akan menghapus seluruh {(counts?.employee || 0).toLocaleString('id-ID')} data karyawan dari database.
+                                    </p>
+                                    <p className="text-red-700 leading-relaxed">
+                                        Data riwayat pelatihan tidak akan dihapus, namun kaitan dengan data karyawan akan dilepas. Saat Anda mengimpor file karyawan baru nantinya, relasi NIK akan otomatis tersambung kembali.
+                                    </p>
+                                </>
+                            )}
+                            {resetModal.target === 'training' && (
+                                <>
+                                    <p className="font-semibold">
+                                        Anda akan menghapus seluruh {(counts?.training || 0).toLocaleString('id-ID')} baris data pelatihan dari database.
+                                    </p>
+                                    <p className="text-red-700 leading-relaxed">
+                                        Database pelatihan akan dikosongkan secara total. Anda dapat mengimpor kembali melalui berkas spreadsheet atau sinkronisasi Portal FR Academy.
+                                    </p>
+                                </>
+                            )}
+                            {resetModal.target === 'all' && (
+                                <p className="font-semibold">
+                                    Anda akan menghapus bersih seluruh data karyawan ({(counts?.employee || 0).toLocaleString('id-ID')} baris) dan data pelatihan ({(counts?.training || 0).toLocaleString('id-ID')} baris).
+                                </p>
+                            )}
+                        </div>
+
+                        <form onSubmit={handleConfirmReset} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                                    Ketik kata <span className="font-bold text-red-700 underline tracking-wider">HAPUS</span> untuk konfirmasi:
+                                </label>
+                                <input
+                                    type="text"
+                                    value={resetForm.confirmation}
+                                    onChange={(e) => setResetForm('confirmation', e.target.value)}
+                                    placeholder="Ketik HAPUS di sini"
+                                    disabled={resetProcessing}
+                                    className="w-full text-sm font-semibold tracking-wider px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
+                                    autoFocus
+                                />
+                                {resetErrors?.confirmation && (
+                                    <p className="text-red-600 text-xs mt-1 font-medium">{resetErrors.confirmation}</p>
+                                )}
+                                {resetErrors?.reset && (
+                                    <p className="text-red-600 text-xs mt-1 font-medium">{resetErrors.reset}</p>
+                                )}
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2.5 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={closeResetModal}
+                                    disabled={resetProcessing}
+                                    className="px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                                >
+                                    Batal
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    disabled={resetForm.confirmation.trim().toUpperCase() !== 'HAPUS' || resetProcessing}
+                                    className="px-4 py-2.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs flex items-center gap-1.5"
+                                >
+                                    {resetProcessing ? (
+                                        <>
+                                            <RefreshCw className="animate-spin w-3.5 h-3.5" />
+                                            <span>Menghapus...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 size={13} />
+                                            <span>Ya, Hapus Data Sekarang</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </AppLayout>
     );
 }

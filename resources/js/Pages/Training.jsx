@@ -41,29 +41,16 @@ export default function Training({ metrics, filters }) {
         name, value, fill: defaultPalette[i % defaultPalette.length]
     })) : [];
 
-    // Tops
-    const topTrainings = hasData ? Object.entries(metrics.top.training_names)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value).slice(0, 10) : [];
-        
-    const topInstructors = hasData ? Object.entries(metrics.top.instructors)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value).slice(0, 10) : [];
-        
-    const topLocations = hasData ? Object.entries(metrics.top.locations)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value).slice(0, 10) : [];
-
     // Hours By
-    const formatHoursData = (obj) => Object.entries(obj)
+    const formatHoursData = (obj) => Object.entries(obj || {})
         .map(([name, value]) => ({ name, value }))
+        .filter(d => d.value > 0)
         .sort((a, b) => b.value - a.value);
 
-    const hoursRegion = hasData ? formatHoursData(metrics.hours_by.region) : [];
-    const hoursGroup = hasData ? formatHoursData(metrics.hours_by.group) : [];
-    const hoursDept = hasData ? formatHoursData(metrics.hours_by.dept).slice(0, 15) : [];
-    const hoursGol = hasData ? formatHoursData(metrics.hours_by.gol) : [];
-    const hoursLevel = hasData ? formatHoursData(metrics.hours_by.level) : [];
+    const hoursRegion = hasData ? formatHoursData(metrics.hours_by?.region) : [];
+    const hoursDept = hasData ? formatHoursData(metrics.hours_by?.dept).slice(0, 15) : [];
+    const hoursGol = hasData ? formatHoursData(metrics.hours_by?.gol) : [];
+    const hoursLevel = hasData ? formatHoursData(metrics.hours_by?.level) : [];
     
     const genderLevelData = hasData ? Object.entries(metrics.gender_by_level).map(([name, genders]) => ({
         name, Male: genders.Male || 0, Female: genders.Female || 0
@@ -160,39 +147,22 @@ export default function Training({ metrics, filters }) {
                             </ChartCard>
                         </div>
 
-                        {/* Tops */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <ChartCard title="Top 10 Pelatihan">
-                                <HorizontalBar data={topTrainings} color={defaultPalette[0]} />
-                            </ChartCard>
-                            <ChartCard title="Top 10 Instruktur">
-                                <HorizontalBar data={topInstructors} color={defaultPalette[1]} />
-                            </ChartCard>
-                            <ChartCard title="Top 10 Tempat">
-                                <HorizontalBar data={topLocations} color={defaultPalette[2]} />
-                            </ChartCard>
-                        </div>
-                        
                         {/* Hours Breakdowns */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <ChartCard title="Total Jam per Region">
                                 <HorizontalBar data={hoursRegion} color={defaultPalette[3]} onClick={(entry) => toggleFilter('region', entry.name)} />
                             </ChartCard>
-                            <ChartCard title="Total Jam per Group">
-                                <HorizontalBar data={hoursGroup} color={defaultPalette[4]} onClick={(entry) => toggleFilter('group', entry.name)} />
+                            <ChartCard title="Total Jam - Golongan">
+                                <HorizontalBar data={hoursGol} color={defaultPalette[0]} onClick={(entry) => toggleFilter('job_category', entry.name)} />
                             </ChartCard>
-                            <ChartCard title="Total Jam per Departemen (Top 15)" className="h-full" height="flex-1 min-h-[500px]">
-                                <HorizontalBar data={hoursDept} color={defaultPalette[5]} onClick={(entry) => toggleFilter('organization_name', entry.name)} />
+                            <ChartCard title="Total Jam - Level">
+                                <HorizontalBar data={hoursLevel} color={defaultPalette[1]} onClick={(entry) => toggleFilter('job_level_code', entry.name)} />
                             </ChartCard>
-                            <div className="grid grid-rows-2 gap-6">
-                                <ChartCard title="Total Jam - Golongan">
-                                    <HorizontalBar data={hoursGol} color={defaultPalette[0]} onClick={(entry) => toggleFilter('job_category', entry.name)} />
-                                </ChartCard>
-                                <ChartCard title="Total Jam - Level">
-                                    <HorizontalBar data={hoursLevel} color={defaultPalette[1]} onClick={(entry) => toggleFilter('job_level_code', entry.name)} />
-                                </ChartCard>
-                            </div>
                         </div>
+
+                        <ChartCard title="Total Jam per Departemen (Top 15)" height="h-[460px]">
+                            <HorizontalBar data={hoursDept} color={defaultPalette[5]} onClick={(entry) => toggleFilter('organization_name', entry.name)} />
+                        </ChartCard>
 
                         {/* Datatable */}
                         <TrainingTable filters={filters} />

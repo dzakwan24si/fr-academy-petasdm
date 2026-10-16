@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\DataController;
 use App\Http\Controllers\DataQualityController;
 use App\Http\Controllers\EmployeeDirectoryController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TrainingRecordController;
 use App\Models\Company;
+use App\Models\User;
 use App\Services\CombinedMetrics;
 use App\Services\InsightBuilder;
 use App\Services\RetirementMetrics;
@@ -19,6 +21,7 @@ use App\Support\TrainingFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -26,7 +29,7 @@ Route::get('/', function () {
     return redirect('/dashboard');
 });
 
-// Since we skipped Breeze, we create a very simple login placeholder for Phase 0
+// Authentication routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', function () {
         return Inertia::render('Auth/Login');
@@ -34,19 +37,29 @@ Route::middleware('guest')->group(function () {
 
     Route::post('/login', function (Request $request) {
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
+            'nik' => ['required', 'string'],
+            'password' => ['required', 'string'],
         ]);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
+        $user = User::where('nik', $credentials['nik'])->first();
 
-            return redirect()->intended('dashboard');
+        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+            return back()->withErrors([
+                'nik' => 'NIK atau kata sandi yang Anda masukkan tidak sesuai.',
+            ]);
         }
 
-        return back()->withErrors([
-            'email' => 'Email atau password salah.',
-        ]);
+        if (! $user->is_active) {
+            return back()->withErrors([
+                'nik' => 'Akun Anda telah dinonaktifkan. Silakan hubungi Administrator.',
+            ]);
+        }
+
+        Auth::login($user, $request->boolean('remember'));
+        $user->update(['last_login_at' => now()]);
+        $request->session()->regenerate();
+
+        return redirect()->intended('dashboard');
     });
 });
 
@@ -148,10 +161,25 @@ Route::middleware('auth')->group(function () {
     Route::post('/karyawan/{employee}/photo', [EmployeeDirectoryController::class, 'uploadPhoto'])->name('karyawan.photo.upload');
     Route::delete('/karyawan/{employee}/photo', [EmployeeDirectoryController::class, 'deletePhoto'])->name('karyawan.photo.delete');
 
-    // Admin routes
-    Route::get('/admin/import', [ImportController::class, 'index'])->name('admin.import');
-    Route::post('/admin/import', [ImportController::class, 'store'])->name('admin.import.store');
-    Route::post('/admin/import/portal-sync', [ImportController::class, 'syncPortal'])->middleware('throttle:3,1')->name('admin.import.portal-sync');
+    // Admin routes - Import & Sinkronisasi (Superadmin & Manajemen)
+    Route::middleware('role:superadmin,manajemen')->group(function () {
+        Route::get('/admin/import', [ImportController::class, 'index'])->name('admin.import');
+        Route::get('/admin/import/template/{type}', [ImportController::class, 'downloadTemplate'])->name('admin.import.template');
+        Route::post('/admin/import', [ImportController::class, 'store'])->name('admin.import.store');
+        Route::post('/admin/import/portal-sync', [ImportController::class, 'syncPortal'])->middleware('throttle:3,1')->name('admin.import.portal-sync');
+        Route::post('/admin/import/reset', [ImportController::class, 'reset'])->name('admin.import.reset');
+    });
+
+    // Admin routes - Manajemen Pengguna (Superadmin Only)
+    Route::middleware('role:superadmin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/search-employee', [UserController::class, 'searchEmployee'])->name('users.search-employee');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::put('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
+        Route::put('/users/{user}/password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+        Route::patch('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
 
     Route::get('/admin/kualitas-data', [DataQualityController::class, 'index'])->name('admin.kualitas');
     Route::redirect('/admin/quality', '/admin/kualitas-data');
@@ -163,6 +191,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/companies', [DataController::class, 'companies'])->name('companies');
         Route::get('/companies/{company}/profile', [DataController::class, 'companyProfile'])->name('companies.profile');
         Route::get('/companies/{company}/employees', [DataController::class, 'companyEmployees'])->name('companies.employees');
+        Route::get('/cohort/{year}/employees', [DataController::class, 'cohortEmployees'])->name('cohort.employees');
         Route::get('/employees/{employee}', [DataController::class, 'employeeDetail'])->name('employees.detail');
         Route::get('/trainings', [DataController::class, 'trainings'])->name('trainings');
         Route::get('/filter-options', [FilterOptionsController::class, 'index'])->name('filter-options');
