@@ -19,10 +19,6 @@ export default function Demographics({ metrics }) {
     const hasData = metrics && metrics.total_hc > 0;
     
     // Derived datasets
-    const groupData = hasData ? Object.entries(metrics.hc_by_group)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value) : [];
-        
     const regionData = hasData ? Object.entries(metrics.hc_by_region)
         .map(([name, value]) => ({ name, value }))
         .sort((a, b) => b.value - a.value) : [];
@@ -136,12 +132,9 @@ export default function Demographics({ metrics }) {
                 {hasData ? (
                     <div className="space-y-6 animate-in fade-in duration-500">
                         {/* Section 1: HC Overview */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6">
                             <ChartCard title="HC per Region">
                                 <HorizontalBar data={regionData} onClick={(entry) => toggleFilter('region', entry.name)} />
-                            </ChartCard>
-                            <ChartCard title="HC per Group">
-                                <HorizontalBar data={groupData} color={defaultPalette[1]} onClick={(entry) => toggleFilter('group', entry.name)} />
                             </ChartCard>
                         </div>
 
