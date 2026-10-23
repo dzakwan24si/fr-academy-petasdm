@@ -61,7 +61,7 @@ export default function Login() {
                                 value={data.nik}
                                 onChange={e => setData('nik', e.target.value)}
                                 className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-corporate-light focus:border-corporate-light outline-none transition-all placeholder:text-gray-400"
-                                placeholder="Masukkan NIK (contoh: 2018050444)"
+                                placeholder="Masukkan NIK"
                                 required
                                 autoFocus
                             />

@@ -125,7 +125,45 @@ function ProfileTab({ profile, companyId, onLocationFilter }) {
 
     return (
         <div className="space-y-6">
-            {/* Row 1: Generasi & Pelatihan */}
+            {/* Row 1: Lokasi Operasional Perusahaan (Full Width) */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-2xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                    <div>
+                        <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
+                            <MapPin className="text-emerald-700" size={18} />
+                            Lokasi Operasional Perusahaan ({locations?.length || 0})
+                        </h3>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                            Klik pada salah satu lokasi di bawah untuk melihat daftar staf yang ditugaskan di lokasi tersebut:
+                        </p>
+                    </div>
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 self-start sm:self-auto">
+                        Interaktif
+                    </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2.5">
+                    {(locations || []).map(l => (
+                        <button
+                            key={l.id}
+                            onClick={() => onLocationFilter(l)}
+                            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs bg-gray-50/80 text-gray-700 border border-gray-200 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-900 transition-all font-medium group cursor-pointer"
+                            title={`Filter staf di ${l.name}`}
+                        >
+                            <MapPin size={13} className="text-emerald-700 group-hover:scale-110 transition-transform" />
+                            <span>{l.name}</span>
+                            <span className="font-bold bg-white text-emerald-800 px-2 py-0.5 rounded-md border border-gray-200/60 shadow-2xs">
+                                {l.count} staf
+                            </span>
+                        </button>
+                    ))}
+                    {(locations || []).length === 0 && (
+                        <p className="text-gray-400 text-xs py-4">Tidak ada data lokasi yang terdaftar.</p>
+                    )}
+                </div>
+            </div>
+
+            {/* Row 2: Generasi & Pelatihan */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Donut generasi */}
                 <ChartCard title="Komposisi Generasi" isEmpty={genData.length === 0} height="h-72">
@@ -230,7 +268,7 @@ function ProfileTab({ profile, companyId, onLocationFilter }) {
                 </div>
             </div>
 
-            {/* Row 2: Level Jabatan & Top Departemen */}
+            {/* Row 3: Level Jabatan & Top Departemen */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Level bar */}
                 <ChartCard title="Distribusi Level Jabatan" isEmpty={levelData.length === 0} height="h-72">
@@ -263,44 +301,6 @@ function ProfileTab({ profile, companyId, onLocationFilter }) {
                         </BarChart>
                     </ResponsiveContainer>
                 </ChartCard>
-            </div>
-
-            {/* Row 3: Lokasi Operasional Perusahaan (Full Width) */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-2xs">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                    <div>
-                        <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
-                            <MapPin className="text-emerald-700" size={18} />
-                            Lokasi Operasional Perusahaan ({locations?.length || 0})
-                        </h3>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                            Klik pada salah satu lokasi di bawah untuk melihat daftar staf yang ditugaskan di lokasi tersebut:
-                        </p>
-                    </div>
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 self-start sm:self-auto">
-                        Interaktif
-                    </span>
-                </div>
-
-                <div className="flex flex-wrap gap-2.5">
-                    {(locations || []).map(l => (
-                        <button
-                            key={l.id}
-                            onClick={() => onLocationFilter(l)}
-                            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs bg-gray-50/80 text-gray-700 border border-gray-200 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-900 transition-all font-medium group cursor-pointer"
-                            title={`Filter staf di ${l.name}`}
-                        >
-                            <MapPin size={13} className="text-emerald-700 group-hover:scale-110 transition-transform" />
-                            <span>{l.name}</span>
-                            <span className="font-bold bg-white text-emerald-800 px-2 py-0.5 rounded-md border border-gray-200/60 shadow-2xs">
-                                {l.count} staf
-                            </span>
-                        </button>
-                    ))}
-                    {(locations || []).length === 0 && (
-                        <p className="text-gray-400 text-xs py-4">Tidak ada data lokasi yang terdaftar.</p>
-                    )}
-                </div>
             </div>
         </div>
     );
