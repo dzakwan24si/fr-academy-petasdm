@@ -8,6 +8,7 @@
         <link rel="icon" type="image/svg+xml" href="/faviconfr.svg">
 
         <!-- Scripts -->
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.jsx', "resources/js/Pages/{$page['component']}.jsx"])
         @inertiaHead

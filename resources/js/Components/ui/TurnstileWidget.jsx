@@ -23,16 +23,16 @@ const TurnstileWidget = forwardRef(function TurnstileWidget(
         if (!siteKey) return;
 
         let isMounted = true;
+        let pollTimer = null;
 
         const renderWidget = () => {
             if (!isMounted || !containerRef.current || !window.turnstile) return;
-
-            // Jika sudah ter-render, jangan render ulang
-            if (widgetIdRef.current !== null) {
-                return;
-            }
+            if (widgetIdRef.current !== null) return;
 
             try {
+                // Bersihkan konten kontainer jika ada sisa render sebelumnya
+                containerRef.current.innerHTML = '';
+
                 widgetIdRef.current = window.turnstile.render(containerRef.current, {
                     sitekey: siteKey,
                     theme: theme,
@@ -46,9 +46,10 @@ const TurnstileWidget = forwardRef(function TurnstileWidget(
                             onExpire();
                         }
                     },
-                    'error-callback': () => {
+                    'error-callback': (err) => {
+                        console.warn('Turnstile error-callback:', err);
                         if (isMounted && onError) {
-                            onError();
+                            onError(err);
                         }
                     },
                 });
@@ -57,14 +58,13 @@ const TurnstileWidget = forwardRef(function TurnstileWidget(
             }
         };
 
-        if (window.turnstile) {
+        if (typeof window !== 'undefined' && window.turnstile) {
             renderWidget();
         } else {
+            // Pastikan tag script terpasang
             const scriptId = 'cf-turnstile-script';
-            let script = document.getElementById(scriptId);
-
-            if (!script) {
-                script = document.createElement('script');
+            if (!document.getElementById(scriptId)) {
+                const script = document.createElement('script');
                 script.id = scriptId;
                 script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
                 script.async = true;
@@ -72,28 +72,28 @@ const TurnstileWidget = forwardRef(function TurnstileWidget(
                 document.head.appendChild(script);
             }
 
-            const handleLoad = () => {
-                renderWidget();
-            };
-
-            script.addEventListener('load', handleLoad);
-
-            return () => {
-                isMounted = false;
-                script.removeEventListener('load', handleLoad);
-                if (widgetIdRef.current !== null && window.turnstile) {
-                    try {
-                        window.turnstile.remove(widgetIdRef.current);
-                    } catch (e) {
-                        // ignore
-                    }
-                    widgetIdRef.current = null;
+            // Polling setiap 50ms hingga window.turnstile siap
+            let attempts = 0;
+            pollTimer = setInterval(() => {
+                attempts++;
+                if (window.turnstile) {
+                    clearInterval(pollTimer);
+                    pollTimer = null;
+                    renderWidget();
+                } else if (attempts > 100) { // Timeout setelah 5 detik
+                    clearInterval(pollTimer);
+                    pollTimer = null;
+                    console.warn('Cloudflare Turnstile script failed to initialize within 5 seconds.');
                 }
-            };
+            }, 50);
         }
 
         return () => {
             isMounted = false;
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
             if (widgetIdRef.current !== null && window.turnstile) {
                 try {
                     window.turnstile.remove(widgetIdRef.current);
