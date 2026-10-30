@@ -742,7 +742,7 @@ export default function UsersIndex({ users, filters, stats }) {
                                                     setSelectedEmp(null);
                                                     createForm.setData('nik', '');
                                                 }}
-                                                placeholder="Ketik NIK atau nama pegawai (contoh: 201805...)"
+                                                placeholder="Ketik NIK atau nama pegawai..."
                                                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-gray-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all placeholder:text-gray-400"
                                                 required={!createForm.data.is_manual}
                                             />

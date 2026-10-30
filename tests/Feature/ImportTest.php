@@ -290,4 +290,28 @@ class ImportTest extends TestCase
 
         unlink($file);
     }
+
+    public function test_employee_import_handles_top_empty_rows_and_offset_columns()
+    {
+        $csv = "\n\nData Active Employee Per 30 September 2026\n\n\n".
+               ",,No,Employee ID,Employee Name,Join Date,Employment Type,Job Level Code,Job Title Code,Job Title Name,Organization Code,Organization Name,Location Code,Location Name,Company Code,Company Name,Birth Date,Birth Place,Gender,Marital Status,Religion,PTKP Code,PTKP Name,Group,Region\n".
+               ',,1,E999,Budi Santoso,2020-01-01,PERMANENT,C,JD01,Staff,ORG1,Divisi,LOC1,Kebun 1,R01,PT Riau Satu,1990-01-01,Medan,Male,Nikah,Islam,K/1,Kawin 1 anak,FR,Riau';
+
+        $file = tempnam(sys_get_temp_dir(), 'emp_offset_');
+        file_put_contents($file, $csv);
+
+        $importer = new EmployeeImporter;
+        $uploaded = new UploadedFile($file, 'emp_offset.csv', 'text/csv', null, true);
+        $batch = $importer->import($uploaded);
+
+        $this->assertEquals(1, $batch->rows_imported);
+
+        $employee = DB::table('employees')->where('employee_id', 'E999')->first();
+        $this->assertNotNull($employee);
+        $this->assertEquals('Budi Santoso', $employee->name);
+        $this->assertEquals('2020-01-01', $employee->join_date);
+        $this->assertEquals('1990-01-01', $employee->birth_date);
+
+        unlink($file);
+    }
 }

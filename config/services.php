@@ -39,9 +39,17 @@ return [
         'url' => env('PORTAL_API_URL'),
         'token' => env('PORTAL_API_TOKEN'),
         'timeout' => (int) env('PORTAL_API_TIMEOUT', 30),
+        'verify_ssl' => (bool) env('PORTAL_API_VERIFY_SSL', true),
         'sync_enabled' => (bool) env('PORTAL_SYNC_ENABLED', false),
         'sync_time' => env('PORTAL_SYNC_TIME', '02:00'),
         'sync_min_ratio' => (float) env('PORTAL_SYNC_MIN_RATIO', 0.8),
+    ],
+
+    'turnstile' => [
+        'key' => env('TURNSTILE_SITE_KEY', '0x4AAAAAAEzPGJLBNyo86KAl'),
+        'secret' => env('TURNSTILE_SECRET_KEY', '0x4AAAAAAEzPGKSsKiRsoVbsX1tzF-N7x8k'),
+        'enabled' => (bool) env('TURNSTILE_ENABLED', true),
+        'verify_ssl' => (bool) env('TURNSTILE_VERIFY_SSL', true),
     ],
 
 ];

@@ -1,6 +1,7 @@
 import { formatNumber, formatDecimal } from '@/lib/format';
-import { TrendingUp, Users, Activity, BarChart2, Calendar, Target, GraduationCap, Briefcase } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, Activity, BarChart2, Calendar, Target, GraduationCap, Briefcase, ArrowRight } from 'lucide-react';
 import { InfoTooltip } from '@/Components/ui/InfoTooltip';
+import { Link } from '@inertiajs/react';
 
 const DEFAULT_KPI_DESCRIPTIONS = {
     'Total Karyawan': 'Total seluruh tenaga kerja aktif (Headcount) yang tercatat dalam sistem dan sesuai filter aktif saat ini.',
@@ -54,11 +55,27 @@ function resolveKpiDescription(title, explicitDesc) {
     if (lower.includes('coverage') || lower.includes('cakupan')) {
         return 'Persentase karyawan yang telah tersentuh minimal satu program pelatihan.';
     }
+    if (lower.includes('resign') || lower.includes('turnover')) {
+        return 'Total akumulasi karyawan operasional yang keluar/mengundurkan diri pada periode tahun berjalan serta perbandingan YoY.';
+    }
 
     return null;
 }
 
-export function KpiCard({ title, value, unit = '', note = '', highlight = false, isDecimal = false, secondaryText = '', icon: CustomIcon, description }) {
+export function KpiCard({ 
+    title, 
+    value, 
+    unit = '', 
+    note = '', 
+    highlight = false, 
+    isDecimal = false, 
+    secondaryText = '', 
+    icon: CustomIcon, 
+    description,
+    href,
+    hrefLabel,
+    noteClass
+}) {
     const displayValue = isDecimal ? formatDecimal(value) : formatNumber(value);
     const resolvedDesc = resolveKpiDescription(title, description);
     
@@ -68,6 +85,8 @@ export function KpiCard({ title, value, unit = '', note = '', highlight = false,
         const tl = title.toLowerCase();
         if (tl.includes('karyawan') || tl.includes('perempuan') || tl.includes('gen')) {
             Icon = Users;
+        } else if (tl.includes('resign') || tl.includes('turnover')) {
+            Icon = TrendingDown;
         } else if (tl.includes('umur') || tl.includes('masa kerja')) {
             Icon = Activity;
         } else if (tl.includes('pensiun')) {
@@ -78,9 +97,10 @@ export function KpiCard({ title, value, unit = '', note = '', highlight = false,
     }
 
     const tlLower = title.toLowerCase();
+    const isResign = tlLower.includes('resign') || tlLower.includes('turnover');
     const needsAttention = tlLower.includes('risiko') || tlLower.includes('belum pernah training') || tlLower.includes('belum training') || tlLower.includes('belum dilatih') || tlLower.includes('anomali') || highlight;
     const borderClass = needsAttention ? 'border border-amber-500' : 'border border-[#40826D]/40';
-    const iconBgClass = needsAttention ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-[#40826D]';
+    const iconBgClass = isResign ? 'bg-emerald-50 text-[#004D40]' : (needsAttention ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-[#40826D]');
 
     return (
         <div className={`bg-white p-3.5 sm:p-4 rounded-xl shadow-[0_4px_20px_rgba(6,78,59,0.08)] ${borderClass} transition-all duration-300 [@media(hover:hover)]:hover:shadow-[0_8px_30px_rgba(6,78,59,0.12)] [@media(hover:hover)]:hover:-translate-y-1 flex flex-col justify-between h-full relative hover:z-40 focus-within:z-40 group`}>
@@ -91,39 +111,53 @@ export function KpiCard({ title, value, unit = '', note = '', highlight = false,
                 </div>
             )}
             
-            <div className="flex justify-between items-start mb-3 sm:mb-4 relative z-10">
-                <div className="flex items-center gap-1.5 pr-1.5 sm:pr-2 min-w-0">
-                    <h3 className="text-[11px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider leading-snug">{title}</h3>
-                    {resolvedDesc && <InfoTooltip title={title} text={resolvedDesc} />}
-                </div>
-                <div className={`p-2 sm:p-2.5 rounded-full flex-shrink-0 ${iconBgClass}`}>
-                    <Icon size={20} className="sm:w-[22px] sm:h-[22px]" strokeWidth={2.5} />
-                </div>
-            </div>
-            
-            <div className="relative">
-                <div className="flex items-baseline gap-1">
-                    <span className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
-                        {displayValue}
-                    </span>
-                    {unit && <span className="text-xs sm:text-sm font-semibold text-gray-400 ml-1">{unit}</span>}
+            <div>
+                <div className="flex justify-between items-start mb-3 sm:mb-4 relative z-10">
+                    <div className="flex items-center gap-1.5 pr-1.5 sm:pr-2 min-w-0">
+                        <h3 className="text-xs sm:text-[12.5px] font-extrabold text-slate-600 uppercase tracking-wider leading-snug">{title}</h3>
+                        {resolvedDesc && <InfoTooltip title={title} text={resolvedDesc} />}
+                    </div>
+                    <div className={`p-2 sm:p-2.5 rounded-xl flex-shrink-0 ${iconBgClass}`}>
+                        <Icon size={20} className="sm:w-[22px] sm:h-[22px]" strokeWidth={2.5} />
+                    </div>
                 </div>
                 
-                {(note || secondaryText) && (
-                    <div className="mt-2.5 sm:mt-3 flex flex-wrap gap-1.5 sm:gap-2 items-center">
-                        {note && (
-                            <span className="inline-flex items-center text-[10px] sm:text-[11px] font-medium bg-gray-50 text-gray-500 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-gray-100">
-                                {note}
-                            </span>
-                        )}
-                        {secondaryText && (
-                            <span className="inline-flex items-center text-[10px] sm:text-[11px] font-medium text-amber-600 bg-amber-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">
-                                {secondaryText}
-                            </span>
-                        )}
+                <div className="relative">
+                    <div className="flex items-baseline gap-1">
+                        <span className="text-3xl sm:text-[34px] font-black tracking-tight text-slate-900 tabular-nums leading-none">
+                            {displayValue}
+                        </span>
+                        {unit && <span className="text-xs sm:text-sm font-bold text-slate-500 ml-1">{unit}</span>}
                     </div>
-                )}
+                    
+                    {(note || secondaryText) && (
+                        <div className="mt-3 flex flex-wrap gap-1.5 sm:gap-2 items-center">
+                            {note && (
+                                <span className={`inline-flex items-center text-[10px] sm:text-[11px] font-semibold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md border ${noteClass || 'bg-slate-100 text-slate-700 border-slate-200/60'}`}>
+                                    {note}
+                                </span>
+                            )}
+                            {secondaryText && (
+                                <span className="inline-flex items-center text-[10px] sm:text-[11px] font-bold text-amber-800 bg-amber-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md border border-amber-200/70">
+                                    {secondaryText}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
+
+            {href && (
+                <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                    <Link 
+                        href={href}
+                        className="text-[11px] font-bold text-[#004D40] hover:text-emerald-700 flex items-center gap-1 group/link transition-colors cursor-pointer"
+                    >
+                        <span>{hrefLabel || 'Lihat Analisis Detail'}</span>
+                        <ArrowRight size={13} className="transition-transform group-hover/link:translate-x-0.5" />
+                    </Link>
+                </div>
+            )}
         </div>
     );
 }

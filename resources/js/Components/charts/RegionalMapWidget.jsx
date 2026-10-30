@@ -9,12 +9,13 @@ export function RegionalMapWidget({ data, total }) {
     const regionPositions = {
         'Riau': { top: '28%', left: '16%' },
         'Kalbar': { top: '18%', left: '40%' },
+        'Kaltim': { top: '40%', left: '64%' },
         'Kubar': { top: '40%', left: '64%' },
         'Corp': { top: '78%', left: '28%' },
         'Non': { top: '76%', left: '80%' },
     };
 
-    const displayRegions = ['Riau', 'Kalbar', 'Kubar', 'Corp', 'Non'];
+    const displayRegions = ['Riau', 'Kalbar', 'Kaltim', 'Corp', 'Non'];
 
     const getRegionData = (name) => {
         const d = data?.[name] || { Estate: 0, Mill: 0, HO: 0 };

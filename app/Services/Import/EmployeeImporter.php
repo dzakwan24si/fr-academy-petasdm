@@ -50,13 +50,13 @@ class EmployeeImporter
         'U01' => ['group' => 'PO2', 'region' => 'Corp'],
         'U02' => ['group' => 'PO2', 'region' => 'Corp'],
         'U03' => ['group' => 'PO2', 'region' => 'Corp'],
-        'T09' => ['group' => 'FR', 'region' => 'Kubar'],
-        'T10' => ['group' => 'FR', 'region' => 'Kubar'],
-        'T11' => ['group' => 'FR', 'region' => 'Kubar'],
-        'T12' => ['group' => 'FR', 'region' => 'Kubar'],
-        'T13' => ['group' => 'FR', 'region' => 'Kubar'],
-        'T14' => ['group' => 'FR', 'region' => 'Kubar'],
-        'T15' => ['group' => 'FR', 'region' => 'Kubar'],
+        'T09' => ['group' => 'FR', 'region' => 'Kaltim'],
+        'T10' => ['group' => 'FR', 'region' => 'Kaltim'],
+        'T11' => ['group' => 'FR', 'region' => 'Kaltim'],
+        'T12' => ['group' => 'FR', 'region' => 'Kaltim'],
+        'T13' => ['group' => 'FR', 'region' => 'Kaltim'],
+        'T14' => ['group' => 'FR', 'region' => 'Kaltim'],
+        'T15' => ['group' => 'FR', 'region' => 'Kaltim'],
         'T16' => ['group' => 'NON GROUP', 'region' => 'Non'],
         'J04' => ['group' => 'NON GROUP', 'region' => 'Non'],
         'J05' => ['group' => 'NON GROUP', 'region' => 'Non'],
@@ -144,30 +144,62 @@ class EmployeeImporter
         }
 
         $rows = $data[0];
-        $header = array_map('trim', array_filter((array) $rows[0], fn ($v) => $v !== null));
         $expectedHeader = ['Employee ID', 'Employee Name', 'Join Date', 'Employment Type', 'Job Level Code', 'Job Title Code', 'Job Title Name', 'Organization Code', 'Organization Name', 'Location Code', 'Location Name', 'Company Code', 'Company Name', 'Birth Date', 'Birth Place', 'Gender', 'Marital Status', 'Religion', 'PTKP Code', 'PTKP Name', 'Group', 'Region'];
 
-        $missing = array_diff($expectedHeader, $header);
+        // Auto-detect header row within first 25 rows
+        $headerRowIndex = null;
+        $colIndexMap = [];
+
+        $searchLimit = min(25, count($rows));
+        for ($i = 0; $i < $searchLimit; $i++) {
+            $trimmedCells = array_map(fn ($v) => trim((string) $v), (array) $rows[$i]);
+            $found = [];
+            foreach ($expectedHeader as $colName) {
+                $foundIdx = array_search(strtolower($colName), array_map('strtolower', $trimmedCells));
+                if ($foundIdx !== false) {
+                    $found[$colName] = $foundIdx;
+                }
+            }
+
+            if (count($found) >= count($expectedHeader) * 0.75 || (isset($found['Employee ID']) && isset($found['Employee Name']) && isset($found['Company Code']))) {
+                $headerRowIndex = $i;
+                $colIndexMap = $found;
+                break;
+            }
+        }
+
+        if ($headerRowIndex === null) {
+            $firstRowCells = array_map('trim', array_filter((array) ($rows[0] ?? []), fn ($v) => $v !== null && $v !== ''));
+            $missing = array_diff($expectedHeader, $firstRowCells);
+            throw new RuntimeException('Kolom hilang: '.implode(', ', $missing ?: $expectedHeader));
+        }
+
+        $missing = array_diff($expectedHeader, array_keys($colIndexMap));
         if ($missing) {
             throw new RuntimeException('Kolom hilang: '.implode(', ', $missing));
         }
 
-        $count = count($header);
-
         $existingEmpIds = DB::table('employees')->pluck('employee_id')->all();
         $importedEmpIds = [];
 
-        // Mulai dari baris ke-2 (index 1)
-        for ($i = 1; $i < count($rows); $i++) {
+        // Mulai dari baris setelah header
+        for ($i = $headerRowIndex + 1; $i < count($rows); $i++) {
             $r = $rows[$i];
 
             // Skip baris kosong
-            if (empty(array_filter($r, fn ($val) => $val !== null && $val !== ''))) {
+            if (empty(array_filter($r, fn ($val) => $val !== null && trim((string) $val) !== ''))) {
                 continue;
             }
 
-            $r = array_pad($r, $count, null);
-            $row = array_combine($header, array_slice($r, 0, $count));
+            $row = [];
+            foreach ($colIndexMap as $colName => $colIdx) {
+                $row[$colName] = $r[$colIdx] ?? null;
+            }
+
+            // Skip baris tanpa Employee ID dan tanpa Name (misal catatan di baris bawah)
+            if (empty(trim((string) ($row['Employee ID'] ?? ''))) && empty(trim((string) ($row['Employee Name'] ?? '')))) {
+                continue;
+            }
 
             $report->totalRows++;
             $employeeId = trim((string) $row['Employee ID']);
@@ -196,12 +228,18 @@ class EmployeeImporter
         }
 
         $companyCode = trim((string) $r['Company Code']);
-        [$group, $region] = $this->resolveGroupAndRegion($companyCode, $r['Group'] ?? null, $r['Region'] ?? null, $report, $employeeId);
-
         $companyName = trim((string) $r['Company Name']);
         if (str_starts_with($companyName, '=')) {
             $companyName = $companyCode;
         }
+
+        // Jika company code belum memiliki suffix pemisah ('-'), tapi company name berakhiran angka ('... 1' atau '... 2'),
+        // bedakan company code menjadi turunan unik (misal 'R11-1' dan 'R11-2') agar terdaftar sebagai entitas perusahaan tersendiri.
+        if (! str_contains($companyCode, '-') && preg_match('/\s+(\d+)$/', $companyName, $numMatch)) {
+            $companyCode = $companyCode.'-'.$numMatch[1];
+        }
+
+        [$group, $region] = $this->resolveGroupAndRegion($companyCode, $r['Group'] ?? null, $r['Region'] ?? null, $report, $employeeId);
 
         if (! isset($this->companiesCache[$companyCode])) {
             $id = DB::table('companies')->insertGetId([
@@ -287,20 +325,21 @@ class EmployeeImporter
     private function resolveGroupAndRegion(string $companyCode, ?string $rawGroup, ?string $rawRegion, ImportReport $report, string $employeeId): array
     {
         $group = trim((string) $rawGroup);
-        $region = trim((string) $rawRegion);
+        $region = Clean::region($rawRegion) ?? trim((string) $rawRegion);
 
         $isGroupCorrupt = str_starts_with($group, '=') || str_starts_with($group, '#') || $group === '';
         $isRegionCorrupt = str_starts_with($region, '=') || str_starts_with($region, '#') || $region === '';
 
         if ($isGroupCorrupt || $isRegionCorrupt) {
-            $default = self::COMPANY_DEFAULTS[$companyCode] ?? null;
+            $baseCode = explode('-', $companyCode)[0];
+            $default = self::COMPANY_DEFAULTS[$companyCode] ?? self::COMPANY_DEFAULTS[$baseCode] ?? null;
 
             if (! $default) {
                 $prefix = strtoupper(substr($companyCode, 0, 1));
                 $default = match ($prefix) {
                     'R' => ['group' => 'FR', 'region' => 'Riau'],
-                    'B' => ($companyCode === 'B10') ? ['group' => 'PO2', 'region' => 'Corp'] : ['group' => 'FR', 'region' => 'Kalbar'],
-                    'T' => ($companyCode === 'T16') ? ['group' => 'NON GROUP', 'region' => 'Non'] : ['group' => 'FR', 'region' => 'Kubar'],
+                    'B' => ($baseCode === 'B10') ? ['group' => 'PO2', 'region' => 'Corp'] : ['group' => 'FR', 'region' => 'Kalbar'],
+                    'T' => ($baseCode === 'T16') ? ['group' => 'NON GROUP', 'region' => 'Non'] : ['group' => 'FR', 'region' => 'Kaltim'],
                     'U', 'L' => ['group' => 'PO2', 'region' => 'Corp'],
                     'J' => ['group' => 'NON GROUP', 'region' => 'Non'],
                     default => null,

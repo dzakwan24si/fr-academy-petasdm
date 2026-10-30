@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\Employee;
 use App\Models\Location;
 use App\Services\AuditLogger;
+use App\Support\Clean;
 use App\Support\Demographics;
 use App\Support\EmployeeFilter;
 use App\Support\TrainingFilter;
@@ -34,8 +35,18 @@ class DataController extends Controller
         $employees = $query->get(['company_id', 'location_id', 'region', 'birth_date']);
         $companyIds = $employees->pluck('company_id')->unique()->filter();
 
-        $companies = Company::whereIn('id', $companyIds)->get()->map(function ($c) use ($employees) {
+        // Ambil semua lokasi terkait secara bulk
+        $locationIds = $employees->pluck('location_id')->unique()->filter();
+        $locations = Location::whereIn('id', $locationIds)->get(['id', 'code', 'name'])->keyBy('id');
+
+        $companies = Company::whereIn('id', $companyIds)->get()->map(function ($c) use ($employees, $locations) {
             $emps = $employees->where('company_id', $c->id);
+
+            // Lokasi unit untuk perusahaan ini
+            $companyLocIds = $emps->pluck('location_id')->unique()->filter();
+            $companyLocations = $companyLocIds->map(fn ($id) => $locations->get($id))->filter();
+            $locNames = $companyLocations->pluck('name')->filter()->values()->all();
+            $locCodes = $companyLocations->pluck('code')->filter()->values()->all();
 
             // Hitung generasi mini untuk generation bar di galeri
             $generations = [];
@@ -48,15 +59,22 @@ class DataController extends Controller
                 }
             }
 
+            $meta = Clean::companyMeta($c->name, $locNames);
+
             return [
                 'id' => $c->id,
                 'code' => $c->code,
                 'name' => $c->name,
                 'group' => $c->group,
                 'employee_count' => $emps->count(),
-                'location_count' => $emps->pluck('location_id')->unique()->count(),
-                'region' => $emps->first()->region ?? 'Unknown',
+                'location_count' => $companyLocIds->count(),
+                'region' => Clean::region($emps->first()->region ?? $c->region) ?? 'Unknown',
                 'generations' => $generations,
+                'initials' => $meta['initials'],
+                'aliases' => $meta['aliases'],
+                'facilities' => Clean::facilities($locNames),
+                'location_names' => $locNames,
+                'location_codes' => $locCodes,
             ];
         })->sortByDesc('employee_count')->values();
 
@@ -70,12 +88,31 @@ class DataController extends Controller
     {
         $user = $request->user();
 
+        // Daftar lengkap seluruh unit operasional perusahaan (tetap utuh meskipun sedang difilter lokasi)
+        $allCompanyEmployees = Employee::query()->where('company_id', $company->id)->get(['id', 'location_id']);
+        $totalCompanyHc = $allCompanyEmployees->count();
+
+        $allLocIds = $allCompanyEmployees->pluck('location_id')->filter()->unique();
+        $locNames = Location::whereIn('id', $allLocIds)->pluck('name', 'id');
+        $locCounts = $allCompanyEmployees->groupBy('location_id')->map(fn ($g) => $g->count());
+
+        $locDetails = [];
+        foreach ($allLocIds as $locId) {
+            $locDetails[] = [
+                'id' => $locId,
+                'name' => $locNames[$locId] ?? 'Unknown',
+                'count' => $locCounts[$locId] ?? 0,
+            ];
+        }
+        usort($locDetails, fn ($a, $b) => $b['count'] <=> $a['count']);
+
+        // Filter diterapkan untuk menghitung analitik spesifik (misal per kebun/pabrik/unit)
         $query = Employee::query()->where('company_id', $company->id);
         $query = $filter->apply($query, $request);
         $employees = $query->get();
 
         $totalHc = $employees->count();
-        if ($totalHc === 0) {
+        if ($totalHc === 0 && ! $request->filled('location_id')) {
             return response()->json(['error' => 'No data'], 404);
         }
 
@@ -88,9 +125,6 @@ class DataController extends Controller
 
         $avgAge = $ages->count() > 0 ? $ages->average() : 0;
         $avgLos = $loses->count() > 0 ? $loses->average() : 0;
-
-        // Pensiun (55 tahun)
-        $pensiun = $employees->filter(fn ($e) => Demographics::ageFullYears(Carbon::parse($e->birth_date)) >= 55)->count();
 
         // Demografi: Generasi
         $generations = [];
@@ -119,32 +153,143 @@ class DataController extends Controller
         arsort($depts);
         $depts = array_slice($depts, 0, 8);
 
-        // Lokasi
-        $locs = [];
-        $locNames = Location::whereIn('id', $employees->pluck('location_id')->unique())->pluck('name', 'id');
-        foreach ($employees as $e) {
-            if ($e->location_id) {
-                $locs[$e->location_id] = ($locs[$e->location_id] ?? 0) + 1;
-            }
-        }
-        $locDetails = [];
-        foreach ($locs as $id => $c) {
-            $locDetails[] = [
-                'id' => $id,
-                'name' => $locNames[$id] ?? 'Unknown',
-                'count' => $c,
-            ];
-        }
-
         // Ringkasan pelatihan perusahaan (dari baris terhubung saja)
         $empIds = $employees->pluck('id')->all();
         $trainings = DB::table('training_records')
             ->whereIn('employee_id', $empIds)
-            ->get(['employee_id', 'hours']);
+            ->get(['employee_id', 'training_name', 'hours', 'regularity', 'source_type']);
 
         $totalTrainingHours = round((float) $trainings->sum('hours'), 1);
         $trainedHc = $trainings->pluck('employee_id')->unique()->count();
         $trainingCoverage = $totalHc > 0 ? round(($trainedHc / $totalHc) * 100, 1) : 0;
+        $avgHoursPerTrainee = $trainedHc > 0 ? round($totalTrainingHours / $trainedHc, 1) : 0;
+
+        // Analisis Demografi Mendalam: Usia Bins & Gender
+        $ageBins = [
+            '<25' => ['name' => '<25', 'Male' => 0, 'Female' => 0, 'total' => 0],
+            '25-29' => ['name' => '25-29', 'Male' => 0, 'Female' => 0, 'total' => 0],
+            '30-34' => ['name' => '30-34', 'Male' => 0, 'Female' => 0, 'total' => 0],
+            '35-39' => ['name' => '35-39', 'Male' => 0, 'Female' => 0, 'total' => 0],
+            '40-44' => ['name' => '40-44', 'Male' => 0, 'Female' => 0, 'total' => 0],
+            '45-49' => ['name' => '45-49', 'Male' => 0, 'Female' => 0, 'total' => 0],
+            '50-54' => ['name' => '50-54', 'Male' => 0, 'Female' => 0, 'total' => 0],
+            '55+' => ['name' => '55+', 'Male' => 0, 'Female' => 0, 'total' => 0],
+        ];
+
+        // Analisis Masa Kerja (Tenure) Bins
+        $tenureBins = [
+            ['name' => '<1 Thn', 'value' => 0],
+            ['name' => '1-3 Thn', 'value' => 0],
+            ['name' => '3-5 Thn', 'value' => 0],
+            ['name' => '5-10 Thn', 'value' => 0],
+            ['name' => '10-15 Thn', 'value' => 0],
+            ['name' => '15+ Thn', 'value' => 0],
+        ];
+        $tenureMap = ['<1 Thn' => 0, '1-3 Thn' => 1, '3-5 Thn' => 2, '5-10 Thn' => 3, '10-15 Thn' => 4, '15+ Thn' => 5];
+
+        $asOf = now();
+        $cohortYears = [];
+        $newHireIds = [];
+
+        foreach ($employees as $e) {
+            $gender = $e->gender === 'Female' ? 'Female' : 'Male';
+
+            // Usia
+            if ($e->birth_date) {
+                $birth = Carbon::parse($e->birth_date);
+                $ageFull = Demographics::ageFullYears($birth, $asOf);
+
+                // Age bin
+                $bin = '<25';
+                if ($ageFull >= 55) {
+                    $bin = '55+';
+                } elseif ($ageFull >= 50) {
+                    $bin = '50-54';
+                } elseif ($ageFull >= 45) {
+                    $bin = '45-49';
+                } elseif ($ageFull >= 40) {
+                    $bin = '40-44';
+                } elseif ($ageFull >= 35) {
+                    $bin = '35-39';
+                } elseif ($ageFull >= 30) {
+                    $bin = '30-34';
+                } elseif ($ageFull >= 25) {
+                    $bin = '25-29';
+                }
+
+                $ageBins[$bin][$gender]++;
+                $ageBins[$bin]['total']++;
+            }
+
+            // Masa Kerja
+            if ($e->join_date) {
+                $join = Carbon::parse($e->join_date);
+                $losFull = Demographics::losFullYears($join, $asOf);
+
+                if ($losFull < 1) {
+                    $tenureBins[$tenureMap['<1 Thn']]['value']++;
+                    $newHireIds[] = $e->id;
+                } elseif ($losFull < 3) {
+                    $tenureBins[$tenureMap['1-3 Thn']]['value']++;
+                } elseif ($losFull < 5) {
+                    $tenureBins[$tenureMap['3-5 Thn']]['value']++;
+                } elseif ($losFull < 10) {
+                    $tenureBins[$tenureMap['5-10 Thn']]['value']++;
+                } elseif ($losFull < 15) {
+                    $tenureBins[$tenureMap['10-15 Thn']]['value']++;
+                } else {
+                    $tenureBins[$tenureMap['15+ Thn']]['value']++;
+                }
+
+                $cohortYear = $join->year;
+                $cohortYears[$cohortYear] = ($cohortYears[$cohortYear] ?? 0) + 1;
+            }
+        }
+
+        // Sort cohort
+        ksort($cohortYears);
+        $cohortData = [];
+        foreach ($cohortYears as $yr => $cnt) {
+            $cohortData[] = ['year' => (string) $yr, 'count' => $cnt];
+        }
+
+        // Untrained new hires
+        $trainedEmpIds = $trainings->pluck('employee_id')->unique()->all();
+        $untrainedNewHires = count(array_diff($newHireIds, $trainedEmpIds));
+
+        // Top trainings
+        $topTrainings = $trainings->groupBy('training_name')
+            ->map(fn ($grp, $tName) => [
+                'name' => $tName,
+                'participants' => $grp->pluck('employee_id')->unique()->count(),
+                'hours' => round((float) $grp->sum('hours'), 1),
+            ])
+            ->sortByDesc('participants')
+            ->values()
+            ->slice(0, 6)
+            ->all();
+
+        // Demografi tambahan: status pernikahan & tipe kepegawaian
+        $maritalCounts = [];
+        $employmentTypeCounts = [];
+        foreach ($employees as $e) {
+            $m = $e->marital_status ?: 'Lainnya';
+            $maritalCounts[$m] = ($maritalCounts[$m] ?? 0) + 1;
+
+            $et = $e->employment_type ?: 'Lainnya';
+            $employmentTypeCounts[$et] = ($employmentTypeCounts[$et] ?? 0) + 1;
+        }
+
+        // Pelatihan breakdown (regularity & source_type)
+        $trainRegularity = [];
+        $trainSourceType = [];
+        foreach ($trainings as $tr) {
+            $r = $tr->regularity ?: 'Non Regular';
+            $trainRegularity[$r] = ($trainRegularity[$r] ?? 0) + 1;
+
+            $s = $tr->source_type ?: 'Internal';
+            $trainSourceType[$s] = ($trainSourceType[$s] ?? 0) + 1;
+        }
 
         // Opsi filter untuk tab staf
         $allDepts = $employees->pluck('organization_name')->filter()->unique()->sort()->values()->all();
@@ -152,22 +297,44 @@ class DataController extends Controller
         $availableEmploymentTypes = $employees->pluck('employment_type')->filter()->unique()->sort()->values()->all();
 
         return response()->json([
+            'total_company_hc' => $totalCompanyHc,
+            'active_location_id' => $request->filled('location_id') ? (int) $request->input('location_id') : null,
+            'facilities' => Clean::facilities($locNames->values()->all()),
             'kpi' => [
                 'hc' => $totalHc,
                 'avg_age' => round($avgAge, 1),
                 'avg_los' => round($avgLos, 1),
                 'female_pct' => round(($females / $totalHc) * 100, 1),
                 'perm_pct' => round(($perm / $totalHc) * 100, 1),
-                'pensiun' => $pensiun,
+                'new_hires' => count($newHireIds),
+                'untrained_new_hires' => $untrainedNewHires,
             ],
             'generations' => $generations,
             'levels' => $levels,
             'departments' => $depts,
             'locations' => $locDetails,
+            'demografi' => [
+                'age_bins' => array_values($ageBins),
+                'male_count' => $totalHc - $females,
+                'female_count' => $females,
+                'marital_status' => $maritalCounts,
+                'employment_types' => $employmentTypeCounts,
+            ],
+            'masa_kerja' => [
+                'tenure_bins' => $tenureBins,
+                'cohort_years' => $cohortData,
+                'avg_los' => round($avgLos, 1),
+                'new_hires_count' => count($newHireIds),
+            ],
             'training' => [
                 'total_hours' => $totalTrainingHours,
                 'trained_hc' => $trainedHc,
                 'coverage_pct' => $trainingCoverage,
+                'avg_hours_per_trainee' => $avgHoursPerTrainee,
+                'untrained_new_hires' => $untrainedNewHires,
+                'top_trainings' => $topTrainings,
+                'regularity' => $trainRegularity,
+                'source_type' => $trainSourceType,
             ],
             'filter_options' => [
                 'levels' => $availableLevels,

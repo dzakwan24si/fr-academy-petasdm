@@ -7,7 +7,6 @@ import {
     RefreshCw, 
     FileSpreadsheet, 
     Layers, 
-    ShieldCheck, 
     CheckCircle2, 
     AlertTriangle, 
     XCircle, 
@@ -213,13 +212,6 @@ export default function Import() {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                    <Link
-                        href="/admin/kualitas-data"
-                        className="inline-flex items-center px-3.5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors shadow-2xs"
-                    >
-                        <ShieldCheck className="w-4 h-4 mr-1.5 text-emerald-600" />
-                        Kualitas Data
-                    </Link>
                     <Link
                         href="/pelatihan/data"
                         className="inline-flex items-center px-3.5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors shadow-2xs"

@@ -211,26 +211,60 @@ class TrainingImporter
         }
 
         $rows = $data[0];
-        $header = array_map('trim', array_filter((array) $rows[0], fn ($v) => $v !== null));
         $expectedHeader = ['NIK', 'Nama', 'Jenis Kelamin', 'Nama PT', 'Department', 'lokasi Kerja', 'Group', 'REGION', 'GOL', 'Jabatan', 'Tgl', 'Bln', 'Thn', 'Jml Hari', 'Jam Pelatihan', 'Nama Pelatihan', 'Instruktur', 'Tempat Pelatihan', 'Reg / Non Reg', 'Keterangan', 'Internal/Eksternal', 'Level', 'Periode'];
 
-        $missing = array_diff($expectedHeader, $header);
+        // Auto-detect header row within first 25 rows
+        $headerRowIndex = null;
+        $colIndexMap = [];
+
+        $searchLimit = min(25, count($rows));
+        for ($i = 0; $i < $searchLimit; $i++) {
+            $trimmedCells = array_map(fn ($v) => trim((string) $v), (array) $rows[$i]);
+            $found = [];
+            foreach ($expectedHeader as $colName) {
+                $foundIdx = array_search(strtolower($colName), array_map('strtolower', $trimmedCells));
+                if ($foundIdx !== false) {
+                    $found[$colName] = $foundIdx;
+                }
+            }
+
+            if (count($found) >= count($expectedHeader) * 0.75 || (isset($found['NIK']) && isset($found['Nama']) && isset($found['Nama Pelatihan']))) {
+                $headerRowIndex = $i;
+                $colIndexMap = $found;
+                break;
+            }
+        }
+
+        if ($headerRowIndex === null) {
+            $firstRowCells = array_map('trim', array_filter((array) ($rows[0] ?? []), fn ($v) => $v !== null && $v !== ''));
+            $missing = array_diff($expectedHeader, $firstRowCells);
+            throw new RuntimeException('Kolom hilang: '.implode(', ', $missing ?: $expectedHeader));
+        }
+
+        $missing = array_diff($expectedHeader, array_keys($colIndexMap));
         if ($missing) {
             throw new RuntimeException('Kolom hilang: '.implode(', ', $missing));
         }
 
-        $count = count($header);
         $mappedRows = [];
 
-        for ($i = 1; $i < count($rows); $i++) {
+        for ($i = $headerRowIndex + 1; $i < count($rows); $i++) {
             $r = $rows[$i];
 
-            if (empty(array_filter($r, fn ($val) => $val !== null && $val !== ''))) {
+            if (empty(array_filter($r, fn ($val) => $val !== null && trim((string) $val) !== ''))) {
                 continue;
             }
 
-            $r = array_pad($r, $count, null);
-            $mappedRows[] = array_combine($header, array_slice($r, 0, $count));
+            $row = [];
+            foreach ($colIndexMap as $colName => $colIdx) {
+                $row[$colName] = $r[$colIdx] ?? null;
+            }
+
+            if (empty(trim((string) ($row['NIK'] ?? ''))) && empty(trim((string) ($row['Nama'] ?? '')))) {
+                continue;
+            }
+
+            $mappedRows[] = $row;
         }
 
         $this->processMappedRows($mappedRows, $report, false);

@@ -2,26 +2,29 @@
 
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\DataController;
-use App\Http\Controllers\DataQualityController;
 use App\Http\Controllers\EmployeeDirectoryController;
 use App\Http\Controllers\FilterOptionsController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ResignationController;
 use App\Http\Controllers\TrainingRecordController;
 use App\Models\Company;
 use App\Models\User;
 use App\Services\CombinedMetrics;
 use App\Services\InsightBuilder;
-use App\Services\RetirementMetrics;
+use App\Services\ResignationMetrics;
 use App\Services\TenureMetrics;
 use App\Services\TrainingMetrics;
 use App\Services\WorkforceMetrics;
+use App\Support\Clean;
 use App\Support\EmployeeFilter;
 use App\Support\TrainingFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -32,14 +35,53 @@ Route::get('/', function () {
 // Authentication routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', function () {
-        return Inertia::render('Auth/Login');
+        return Inertia::render('Auth/Login', [
+            'turnstileSiteKey' => config('services.turnstile.key'),
+            'turnstileEnabled' => (bool) config('services.turnstile.enabled', true),
+        ]);
     })->name('login');
 
     Route::post('/login', function (Request $request) {
-        $credentials = $request->validate([
+        $rules = [
             'nik' => ['required', 'string'],
             'password' => ['required', 'string'],
+        ];
+
+        $turnstileEnabled = (bool) config('services.turnstile.enabled', true) && ! app()->environment('testing');
+        if ($turnstileEnabled) {
+            $rules['turnstile_token'] = ['required', 'string'];
+        }
+
+        $credentials = $request->validate($rules, [
+            'turnstile_token.required' => 'Harap selesaikan verifikasi keamanan (Cloudflare).',
         ]);
+
+        if ($turnstileEnabled) {
+            $http = Http::asForm()->timeout(10);
+            if (app()->environment('local') || ! (bool) config('services.turnstile.verify_ssl', true)) {
+                $http = $http->withoutVerifying();
+            }
+
+            try {
+                $response = $http->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+                    'secret' => config('services.turnstile.secret'),
+                    'response' => $credentials['turnstile_token'],
+                    'remoteip' => $request->ip(),
+                ]);
+
+                if (! $response->json('success')) {
+                    return back()->withErrors([
+                        'turnstile_token' => 'Verifikasi keamanan tidak valid atau kedaluwarsa. Silakan centang ulang.',
+                    ]);
+                }
+            } catch (Throwable $e) {
+                Log::warning('Turnstile verification failed to reach Cloudflare: '.$e->getMessage());
+
+                return back()->withErrors([
+                    'turnstile_token' => 'Gagal memverifikasi keamanan ke server Cloudflare. Silakan periksa koneksi internet atau coba beberapa saat lagi.',
+                ]);
+            }
+        }
 
         $user = User::where('nik', $credentials['nik'])->first();
 
@@ -79,9 +121,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function (Request $request, EmployeeFilter $filter) {
         $asOf = $request->input('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::now();
         $metricsService = new WorkforceMetrics($asOf);
+        $resignService = new ResignationMetrics;
 
         return Inertia::render('Dashboard', [
             'metrics' => Inertia::defer(fn () => $metricsService->getMetrics($request, $filter, $request->user())),
+            'resign_summary' => Inertia::defer(function () use ($resignService, $request, $metricsService, $filter) {
+                $metrics = $metricsService->getMetrics($request, $filter, $request->user());
+                $totalHc = $metrics['raw_totals']['total_hc'] ?? 0;
+
+                return $resignService->getSummary($request, $totalHc);
+            }),
             'insight' => Inertia::defer(function () use ($metricsService, $request, $filter) {
                 $metrics = $metricsService->getMetrics($request, $filter, $request->user());
 
@@ -90,6 +139,15 @@ Route::middleware('auth')->group(function () {
             'filters' => $request->all(),
         ]);
     })->name('dashboard');
+
+    // Resignation & Turnover Management
+    Route::get('/resign', [ResignationController::class, 'index'])->name('resign.index');
+    Route::get('/resign/template', [ResignationController::class, 'template'])->name('resign.template');
+    Route::post('/resign/import', [ResignationController::class, 'import'])->name('resign.import');
+    Route::get('/resign/export', [ResignationController::class, 'export'])->name('resign.export');
+    Route::post('/resign', [ResignationController::class, 'store'])->name('resign.store');
+    Route::put('/resign/{staffResign}', [ResignationController::class, 'update'])->name('resign.update');
+    Route::delete('/resign/{staffResign}', [ResignationController::class, 'destroy'])->name('resign.destroy');
 
     // /peta redirect ke /perusahaan (URL lama tetap berfungsi)
     Route::get('/peta', function () {
@@ -101,9 +159,30 @@ Route::middleware('auth')->group(function () {
     })->name('perusahaan');
 
     Route::get('/perusahaan/{code}', function (string $code) {
-        $company = Company::where('code', $code)->firstOrFail();
+        $company = Company::where('code', $code)->first();
+        if (! $company) {
+            $split = Company::where('code', $code.'-1')->first();
+            if ($split) {
+                return redirect()->route('perusahaan.show', ['code' => $code.'-1']);
+            }
+            abort(404);
+        }
 
-        return Inertia::render('Company/Show', ['companyCode' => $code, 'companyId' => $company->id]);
+        $meta = Clean::companyMeta($company->name);
+
+        return Inertia::render('Company/Show', [
+            'companyCode' => $company->code,
+            'companyId' => $company->id,
+            'initialCompany' => [
+                'id' => $company->id,
+                'code' => $company->code,
+                'name' => $company->name,
+                'region' => $company->region,
+                'group' => $company->group,
+                'initials' => $meta['initials'],
+                'aliases' => $meta['aliases'],
+            ],
+        ]);
     })->name('perusahaan.show');
 
     Route::get('/demografi', function (Request $request, EmployeeFilter $filter) {
@@ -125,13 +204,8 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('masa-kerja');
 
-    Route::get('/pensiun', function (Request $request, EmployeeFilter $filter) {
-        $metricsService = new RetirementMetrics;
-
-        return Inertia::render('Retirement', [
-            'metrics' => Inertia::defer(fn () => $metricsService->getMetrics($request, $filter)),
-            'filters' => $request->all(),
-        ]);
+    Route::get('/pensiun', function () {
+        return redirect()->route('dashboard');
     })->name('pensiun');
 
     Route::get('/pelatihan', function (Request $request, TrainingFilter $filter) {
@@ -181,8 +255,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     });
 
-    Route::get('/admin/kualitas-data', [DataQualityController::class, 'index'])->name('admin.kualitas');
-    Route::redirect('/admin/quality', '/admin/kualitas-data');
+    Route::redirect('/admin/kualitas-data', '/dashboard');
+    Route::redirect('/admin/quality', '/dashboard');
     // /admin/lokasi dihapus — Master Lokasi tidak ada lagi
 
     // Endpoint JSON

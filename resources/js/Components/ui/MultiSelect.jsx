@@ -42,10 +42,18 @@ export function MultiSelect({ options = [], value = [], onChange, placeholder, d
 
     const filteredOptions = useMemo(() => {
         if (!search.trim()) return options;
-        const q = search.toLowerCase();
+        const q = search.toLowerCase().trim();
         return options.filter(opt => {
-            const optLabel = typeof opt === 'object' ? opt[labelKey] : opt;
-            return String(optLabel || '').toLowerCase().includes(q);
+            if (typeof opt !== 'object' || opt === null) {
+                return String(opt || '').toLowerCase().includes(q);
+            }
+            const label = String(opt[labelKey] || '').toLowerCase();
+            const code = String(opt.code || '').toLowerCase();
+            const initials = String(opt.initials || '').toLowerCase();
+            const aliases = Array.isArray(opt.aliases)
+                ? opt.aliases.some(a => String(a).toLowerCase().includes(q))
+                : false;
+            return label.includes(q) || code.includes(q) || initials.includes(q) || aliases;
         });
     }, [options, search, labelKey]);
 

@@ -5,32 +5,57 @@ import axios from 'axios';
 let cachedOptions = null;
 let fetchPromise = null;
 
-export function useFilters(isTrainingPage = false) {
-    const { url } = usePage();
-    const searchParams = new URLSearchParams(url.split('?')[1] || '');
-    
-    const [filters, setFilters] = useState({
-        region: searchParams.getAll('region[]'),
-        group: searchParams.getAll('group[]'),
-        company_id: searchParams.getAll('company_id[]'),
-        location_id: searchParams.getAll('location_id[]'),
-        organization_name: searchParams.getAll('organization_name[]'),
-        job_level_code: searchParams.getAll('job_level_code[]'),
-        employment_type: searchParams.getAll('employment_type[]'),
-        generation: searchParams.getAll('generation[]'),
-        gender: searchParams.getAll('gender[]'),
-        marital_status: searchParams.getAll('marital_status[]'),
+function getParamArray(searchParams, key) {
+    // 1. Bracket format: key[]
+    const bracketVals = searchParams.getAll(`${key}[]`);
+    if (bracketVals.length > 0) return bracketVals;
+
+    // 2. Direct format: key
+    const directVals = searchParams.getAll(key);
+    if (directVals.length > 0) return directVals;
+
+    // 3. Indexed or nested format: key[0], key[0][0], etc.
+    const indexedVals = [];
+    for (const [paramKey, paramVal] of searchParams.entries()) {
+        if (paramKey.startsWith(`${key}[`)) {
+            indexedVals.push(paramVal);
+        }
+    }
+    return indexedVals;
+}
+
+function parseFiltersFromUrl(url) {
+    const searchParams = new URLSearchParams(url?.split('?')[1] || '');
+    return {
+        region: getParamArray(searchParams, 'region'),
+        group: getParamArray(searchParams, 'group'),
+        company_id: getParamArray(searchParams, 'company_id'),
+        location_id: getParamArray(searchParams, 'location_id'),
+        organization_name: getParamArray(searchParams, 'organization_name'),
+        job_level_code: getParamArray(searchParams, 'job_level_code'),
+        employment_type: getParamArray(searchParams, 'employment_type'),
+        generation: getParamArray(searchParams, 'generation'),
+        gender: getParamArray(searchParams, 'gender'),
+        marital_status: getParamArray(searchParams, 'marital_status'),
         year: searchParams.get('year') || '',
         month: searchParams.get('month') || '',
         nik_status: searchParams.get('nik_status') || '',
-        job_category: searchParams.getAll('job_category[]'),
+        job_category: getParamArray(searchParams, 'job_category'),
         is_regular: searchParams.get('is_regular') || '',
         is_internal: searchParams.get('is_internal') || '',
-        level: searchParams.getAll('level[]'),
-    });
+        level: getParamArray(searchParams, 'level'),
+    };
+}
 
+export function useFilters(isTrainingPage = false) {
+    const { url } = usePage();
+    const [filters, setFilters] = useState(() => parseFiltersFromUrl(url));
     const [options, setOptions] = useState(cachedOptions || null);
     const [loading, setLoading] = useState(!cachedOptions);
+
+    useEffect(() => {
+        setFilters(parseFiltersFromUrl(url));
+    }, [url]);
 
     useEffect(() => {
         if (cachedOptions) return;
@@ -55,10 +80,11 @@ export function useFilters(isTrainingPage = false) {
     const applyFilters = (currentFilters) => {
         const query = {};
         for (const key in currentFilters) {
-            if (Array.isArray(currentFilters[key]) && currentFilters[key].length > 0) {
-                query[`${key}[]`] = currentFilters[key];
-            } else if (!Array.isArray(currentFilters[key]) && currentFilters[key] !== '') {
-                query[key] = currentFilters[key];
+            const val = currentFilters[key];
+            if (Array.isArray(val) && val.length > 0) {
+                query[key] = val;
+            } else if (!Array.isArray(val) && val !== '' && val !== null && val !== undefined) {
+                query[key] = val;
             }
         }
         

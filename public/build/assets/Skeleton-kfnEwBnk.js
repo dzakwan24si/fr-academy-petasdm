@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-COlB3k8A.js";var t=e();function n({className:e=``}){return(0,t.jsx)(`div`,{className:`animate-pulse bg-gray-200 rounded ${e}`})}export{n as t};

@@ -1,0 +1,1 @@
+var e={Boomers:`#94A3B8`,"Gen X":`#F59E0B`,"Gen Y":`#2E7D32`,"Gen Z":`#004D40`},t={Estate:`#004D40`,Mill:`#2E7D32`,HO:`#F59E0B`},n=[`#2E7D32`,`#F59E0B`,`#004D40`,`#94A3B8`,`#64748B`,`#FBBF24`,`#4ADE80`,`#CBD5E1`];export{t as n,e as r,n as t};

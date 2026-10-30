@@ -21,6 +21,7 @@ class PortalTrainingClient
         $url = config('services.portal.url');
         $token = config('services.portal.token');
         $timeout = (int) config('services.portal.timeout', 30);
+        $verifySsl = (bool) config('services.portal.verify_ssl', true);
 
         if (empty($url) || empty($token)) {
             throw new RuntimeException('Koneksi portal belum dikonfigurasi.');
@@ -35,16 +36,21 @@ class PortalTrainingClient
 
         do {
             try {
-                $response = Http::withToken($token)
+                $client = Http::withToken($token)
                     ->acceptJson()
                     ->timeout($timeout)
-                    ->retry(3, 500)
-                    ->get($endpoint, [
-                        'per_page' => 1000,
-                        'page' => $page,
-                    ]);
+                    ->retry(3, 500);
+
+                if (! $verifySsl) {
+                    $client = $client->withoutVerifying();
+                }
+
+                $response = $client->get($endpoint, [
+                    'per_page' => 1000,
+                    'page' => $page,
+                ]);
             } catch (Throwable $e) {
-                throw new RuntimeException('Gagal terhubung ke Portal API: HTTP request error.');
+                throw new RuntimeException('Gagal terhubung ke Portal API: '.$e->getMessage(), 0, $e);
             }
 
             if (! $response->successful()) {

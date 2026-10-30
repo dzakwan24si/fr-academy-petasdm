@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\Employee;
 use App\Models\Location;
+use App\Support\Clean;
 use Illuminate\Support\Facades\DB;
 
 class FilterOptionsController extends Controller
@@ -14,7 +15,17 @@ class FilterOptionsController extends Controller
         // For distinct options, we can query Employee, Company, Location
         // Since dataset is small, doing distinct queries is fine
 
-        $companies = Company::orderBy('name')->get(['id', 'code', 'name']);
+        $companies = Company::orderBy('name')->get(['id', 'code', 'name'])->map(function ($c) {
+            $meta = Clean::companyMeta($c->name);
+
+            return [
+                'id' => $c->id,
+                'code' => $c->code,
+                'name' => $c->name,
+                'initials' => $meta['initials'],
+                'aliases' => $meta['aliases'],
+            ];
+        });
 
         $employeeOptions = Employee::query()->get([
             'region', 'group', 'organization_name', 'job_level_code', 'employment_type', 'gender', 'location_id', 'company_id',

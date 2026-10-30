@@ -27,7 +27,7 @@ const regionStyles = {
         avatar: 'bg-emerald-100 text-emerald-800 border border-emerald-200/60',
         badge: 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
     },
-    Kubar: { 
+    Kaltim: { 
         avatar: 'bg-sky-100 text-sky-800 border border-sky-200/60',
         badge: 'bg-sky-50 text-sky-700 border border-sky-200/60'
     },
@@ -46,12 +46,21 @@ const fallbackRegionStyle = {
     badge: 'bg-gray-50 text-gray-600 border border-gray-200/60'
 };
 
-function getInitials(name = '') {
+const FACILITY_STYLES = {
+    Estate: 'bg-emerald-50 text-emerald-800 border-emerald-200/70',
+    Mill: 'bg-blue-50 text-blue-800 border-blue-200/70',
+    Downstream: 'bg-amber-50 text-amber-800 border-amber-200/70',
+    Office: 'bg-slate-100 text-slate-700 border-slate-200/70',
+};
+
+function getCompanyBadge(company = {}) {
+    if (company.initials) return company.initials;
+    const name = company.name || '';
     const clean = name.replace(/^PT\.?\s+/i, '').trim();
     const parts = clean.split(/\s+/).filter(Boolean);
     if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-    return name.slice(0, 2).toUpperCase();
+    return (company.code || name).slice(0, 2).toUpperCase();
 }
 
 function CompanyCardSkeleton() {
@@ -96,7 +105,7 @@ function GenerationBar({ generations = {} }) {
                                 backgroundColor: generationColors[name] || '#94A3B8' 
                             }}
                             title={`${name}: ${val.toLocaleString('id-ID')} staf (${pct}%)`}
-                            className="transition-all hover:opacity-80"
+                            className="transition-opacity hover:opacity-80"
                         />
                     );
                 })}
@@ -107,22 +116,30 @@ function GenerationBar({ generations = {} }) {
 
 function CompanyCard({ company }) {
     const style = regionStyles[company.region] || fallbackRegionStyle;
+    const badgeText = getCompanyBadge(company);
 
     return (
         <Link
             href={`/perusahaan/${company.code}`}
-            className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs hover:shadow-md hover:border-emerald-200/70 hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between group cursor-pointer h-full"
+            className="bg-white rounded-2xl border border-gray-100 p-5 shadow-2xs hover:shadow-md hover:border-emerald-200/70 hover:-translate-y-1 transition-[transform,box-shadow,border-color] duration-200 flex flex-col justify-between group cursor-pointer h-full"
         >
             <div>
                 {/* Header Card */}
                 <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className={`w-12 h-12 rounded-xl ${style.avatar} flex items-center justify-center text-sm font-bold tracking-wide shrink-0 transition-transform group-hover:scale-105 duration-200`}>
-                        {getInitials(company.name)}
+                    <div className={`w-12 h-12 rounded-xl ${style.avatar} flex items-center justify-center font-bold tracking-tight shrink-0 transition-transform group-hover:scale-105 duration-200 ${badgeText.length > 4 ? 'text-[11px] leading-tight px-1 text-center' : badgeText.length > 3 ? 'text-xs' : 'text-sm'}`}>
+                        {badgeText}
                     </div>
                     <div className="flex flex-col items-end gap-1">
-                        <span className="font-mono text-xs font-bold text-gray-700 bg-gray-100/80 px-2 py-0.5 rounded-md border border-gray-200/50">
-                            {company.code}
-                        </span>
+                        <div className="flex items-center gap-1">
+                            {company.initials && (
+                                <span className="font-mono text-[11px] font-extrabold text-[#004D40] bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200/60" title={`Inisial: ${company.initials}`}>
+                                    {company.initials}
+                                </span>
+                            )}
+                            <span className="font-mono text-xs font-bold text-gray-700 bg-gray-100/80 px-2 py-0.5 rounded-md border border-gray-200/50">
+                                {company.code}
+                            </span>
+                        </div>
                         <div className="flex items-center gap-1">
                             {company.region && (
                                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${style.badge}`}>
@@ -141,6 +158,20 @@ function CompanyCard({ company }) {
                     <Briefcase className="w-3 h-3 text-gray-400" />
                     {company.group || 'FR Group'}
                 </p>
+
+                {/* Facility Badges (Clean Typography, No Emojis) */}
+                {company.facilities && company.facilities.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap mt-2.5">
+                        {company.facilities.map(f => (
+                            <span 
+                                key={f} 
+                                className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${FACILITY_STYLES[f] || 'bg-gray-50 text-gray-700 border-gray-200'}`}
+                            >
+                                {f}
+                            </span>
+                        ))}
+                    </div>
+                )}
 
                 {/* Metrics Stats */}
                 <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-gray-100/80">
@@ -177,28 +208,48 @@ function CompanyCard({ company }) {
 
 function CompanyRowItem({ company }) {
     const style = regionStyles[company.region] || fallbackRegionStyle;
+    const badgeText = getCompanyBadge(company);
 
     return (
         <Link
             href={`/perusahaan/${company.code}`}
-            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white rounded-2xl border border-gray-100 shadow-2xs hover:shadow-sm hover:border-emerald-200/70 transition-all duration-150 group"
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white rounded-2xl border border-gray-100 shadow-2xs hover:shadow-sm hover:border-emerald-200/70 transition-[box-shadow,border-color] duration-150 group"
         >
             <div className="flex items-center gap-3.5 min-w-0">
-                <div className={`w-11 h-11 rounded-xl ${style.avatar} flex items-center justify-center text-sm font-bold tracking-wide shrink-0`}>
-                    {getInitials(company.name)}
+                <div className={`w-11 h-11 rounded-xl ${style.avatar} flex items-center justify-center font-bold tracking-tight shrink-0 ${badgeText.length > 4 ? 'text-[10px] leading-tight px-0.5 text-center' : badgeText.length > 3 ? 'text-xs' : 'text-sm'}`}>
+                    {badgeText}
                 </div>
                 <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-bold text-gray-900 text-sm truncate group-hover:text-[#004D40] transition-colors">
                             {company.name}
                         </p>
+                        {company.initials && (
+                            <span className="font-mono text-[11px] font-extrabold text-[#004D40] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60">
+                                {company.initials}
+                            </span>
+                        )}
                         <span className="font-mono text-[11px] font-semibold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200/50">
                             {company.code}
                         </span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                        {company.group || 'FR Group'} · Region {company.region || '—'}
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <p className="text-xs text-gray-400">
+                            {company.group || 'FR Group'} · Region {company.region || '—'}
+                        </p>
+                        {company.facilities && company.facilities.length > 0 && (
+                            <div className="flex items-center gap-1">
+                                {company.facilities.map(f => (
+                                    <span 
+                                        key={f} 
+                                        className={`text-[10px] font-semibold px-1.5 py-0.2 rounded border ${FACILITY_STYLES[f] || 'bg-gray-50 text-gray-700 border-gray-200'}`}
+                                    >
+                                        {f}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -221,7 +272,7 @@ function CompanyRowItem({ company }) {
     );
 }
 
-const REGIONS = ['Riau', 'Kalbar', 'Kubar', 'Corp', 'Non'];
+const REGIONS = ['Riau', 'Kalbar', 'Kaltim', 'Corp', 'Non'];
 
 export default function CompanyIndex() {
     const [companies, setCompanies] = useState([]);
@@ -229,6 +280,7 @@ export default function CompanyIndex() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [activeRegion, setActiveRegion] = useState('Semua');
+    const [activeFacility, setActiveFacility] = useState('Semua'); // 'Semua' | 'Estate' | 'Mill' | 'Downstream'
     const [sort, setSort] = useState('hc'); // hc | az
     const [viewMode, setViewMode] = useState('grid'); // grid | list
 
@@ -240,27 +292,87 @@ export default function CompanyIndex() {
         }).catch(() => setLoading(false));
     }, []);
 
+    // Ekstrak seluruh region unik yang ada di data perusahaan dengan urutan prioritas
+    const availableRegions = useMemo(() => {
+        const unique = Array.from(new Set(companies.map(c => c.region).filter(Boolean)));
+        const priority = ['Riau', 'Kalbar', 'Kaltim', 'Corp', 'Non'];
+        return unique.sort((a, b) => {
+            const idxA = priority.indexOf(a);
+            const idxB = priority.indexOf(b);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return a.localeCompare(b);
+        });
+    }, [companies]);
+
     // Hitung jumlah per region untuk chip
     const regionCounts = useMemo(() => {
-        return REGIONS.reduce((acc, r) => {
+        return availableRegions.reduce((acc, r) => {
             acc[r] = companies.filter(c => c.region === r).length;
             return acc;
         }, {});
+    }, [companies, availableRegions]);
+
+    // Hitung jumlah per fasilitas untuk chip
+    const facilityCounts = useMemo(() => {
+        const counts = { 'Semua': companies.length };
+        ['Estate', 'Mill', 'Downstream'].forEach(f => {
+            counts[f] = companies.filter(c => c.facilities?.includes(f)).length;
+        });
+        return counts;
     }, [companies]);
 
     const filtered = useMemo(() => {
         let list = companies;
         if (search) {
-            const q = search.toLowerCase();
-            list = list.filter(c =>
-                c.name.toLowerCase().includes(q) ||
-                c.code.toLowerCase().includes(q) ||
-                (c.group || '').toLowerCase().includes(q) ||
-                (c.region || '').toLowerCase().includes(q)
-            );
+            const q = search.toLowerCase().trim();
+            const qNoSpace = q.replace(/\s+/g, '');
+
+            list = list.filter(c => {
+                // 1. Inisial langsung dari badge hijau (mis. ASK, CLP, SMM, SAM 1, SAM 2, SAGM, PSG, KTBM)
+                const badge = (c.initials || '').toLowerCase();
+                const badgeNoSpace = badge.replace(/\s+/g, '');
+                const initialMatch = badge === q || 
+                                     badge.split(/\s+/).includes(q) || 
+                                     badge.startsWith(q) || 
+                                     badgeNoSpace.startsWith(qNoSpace);
+
+                // 2. Variasi alias resmi (mis. SAM, SAM1, SAM 2)
+                const aliasMatch = (c.aliases || []).some(a => {
+                    const al = a.toLowerCase();
+                    return al === q || al.startsWith(q) || al.replace(/\s+/g, '').startsWith(qNoSpace);
+                });
+
+                // 3. Kode perusahaan (mis. R18, R03, R11-1, R14, L02)
+                const codeMatch = c.code.toLowerCase().includes(q);
+
+                // 4. Nama perusahaan (jika <= 3 huruf, periksa awalan kata agar tidak salah mencocokkan suku kata di tengah)
+                const nameLower = c.name.toLowerCase();
+                const nameMatch = q.length <= 3
+                    ? nameLower.split(/[^a-z0-9]+/).filter(Boolean).some(w => w.startsWith(q))
+                    : nameLower.includes(q);
+
+                // 5. Grup (exact match)
+                const groupMatch = (c.group || '').toLowerCase() === q;
+
+                // 6. Unit operasional (kode lokasi seperti KR13 & nama lokasi seperti Jetty)
+                const locCodeMatch = (c.location_codes || []).some(lc => lc.toLowerCase().includes(q));
+                const locNameMatch = (c.location_names || []).some(l => {
+                    const locLower = l.toLowerCase();
+                    return q.length <= 3
+                        ? locLower.split(/[^a-z0-9]+/).filter(Boolean).some(w => w.startsWith(q))
+                        : locLower.includes(q);
+                });
+
+                return initialMatch || aliasMatch || codeMatch || nameMatch || groupMatch || locCodeMatch || locNameMatch;
+            });
         }
         if (activeRegion !== 'Semua') {
             list = list.filter(c => c.region === activeRegion);
+        }
+        if (activeFacility !== 'Semua') {
+            list = list.filter(c => c.facilities?.includes(activeFacility));
         }
         if (sort === 'az') {
             list = [...list].sort((a, b) => a.name.localeCompare(b.name));
@@ -268,7 +380,7 @@ export default function CompanyIndex() {
             list = [...list].sort((a, b) => b.employee_count - a.employee_count);
         }
         return list;
-    }, [companies, search, activeRegion, sort]);
+    }, [companies, search, activeRegion, activeFacility, sort]);
 
     const totalHc = filtered.reduce((s, c) => s + (c.employee_count || 0), 0);
 
@@ -281,7 +393,7 @@ export default function CompanyIndex() {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Galeri Perusahaan</h1>
                     <p className="text-sm text-gray-500 mt-1">
-                        Eksplorasi entitas operasional FR Group, sebaran tenaga kerja, dan fasilitas unit.
+                        Eksplorasi entitas operasional FR Group, sebaran tenaga kerja, dan klasifikasi unit operasional.
                     </p>
                 </div>
 
@@ -338,7 +450,7 @@ export default function CompanyIndex() {
                             type="text"
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            placeholder="Cari nama, kode perusahaan, grup, atau region..."
+                            placeholder="Cari nama, inisial (SAM, PSG, SMM), kode (R11), atau unit (Jetty, KR13)..."
                             className="w-full pl-10 pr-9 py-2 text-sm bg-gray-50/70 hover:bg-gray-50 focus:bg-white rounded-xl border border-gray-200/80 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all"
                         />
                         {search && (
@@ -384,7 +496,7 @@ export default function CompanyIndex() {
                 {/* Region Filter Chips */}
                 <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-gray-100">
                     <span className="text-xs font-medium text-gray-400 mr-1">Region:</span>
-                    {['Semua', ...REGIONS].map(r => {
+                    {['Semua', ...availableRegions].map(r => {
                         const count = r === 'Semua' ? companies.length : (regionCounts[r] || 0);
                         if (r !== 'Semua' && count === 0) return null;
                         const active = activeRegion === r;
@@ -392,14 +504,41 @@ export default function CompanyIndex() {
                             <button
                                 key={r}
                                 onClick={() => setActiveRegion(r)}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all ${
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all cursor-pointer ${
                                     active
                                         ? 'bg-[#004D40] text-white border-[#004D40] shadow-2xs font-semibold'
                                         : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-300 hover:text-emerald-800'
                                 }`}
                             >
                                 {r}
-                                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${active ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${active ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                                    {count}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Category / Facility Filter Chips */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-gray-100/60">
+                    <span className="text-xs font-medium text-gray-400 mr-1">Kategori:</span>
+                    {['Semua', 'Estate', 'Mill', 'Downstream'].map(f => {
+                        const count = facilityCounts[f] || 0;
+                        if (f !== 'Semua' && count === 0) return null;
+                        const active = activeFacility === f;
+                        return (
+                            <button
+                                key={f}
+                                type="button"
+                                onClick={() => setActiveFacility(f)}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all cursor-pointer ${
+                                    active
+                                        ? 'bg-[#004D40] text-white border-[#004D40] shadow-2xs font-semibold'
+                                        : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-300 hover:text-emerald-800'
+                                }`}
+                            >
+                                {f}
+                                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${active ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
                                     {count}
                                 </span>
                             </button>
@@ -420,11 +559,11 @@ export default function CompanyIndex() {
                     </div>
                     <h3 className="text-base font-bold text-gray-900">Tidak ada perusahaan ditemukan</h3>
                     <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
-                        Tidak ada perusahaan yang sesuai dengan kata kunci pencarian atau filter region saat ini.
+                        Tidak ada perusahaan yang sesuai dengan kata kunci pencarian atau filter yang dipilih.
                     </p>
-                    {(search || activeRegion !== 'Semua') && (
+                    {(search || activeRegion !== 'Semua' || activeFacility !== 'Semua') && (
                         <button
-                            onClick={() => { setSearch(''); setActiveRegion('Semua'); }}
+                            onClick={() => { setSearch(''); setActiveRegion('Semua'); setActiveFacility('Semua'); }}
                             className="mt-4 inline-flex items-center px-3.5 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors"
                         >
                             Reset Pencarian &amp; Filter

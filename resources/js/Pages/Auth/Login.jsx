@@ -1,40 +1,50 @@
+import { useRef } from 'react';
 import { useForm, Head } from '@inertiajs/react';
+import TurnstileWidget from '@/Components/ui/TurnstileWidget';
 
-export default function Login() {
+export default function Login({ turnstileSiteKey, turnstileEnabled = true }) {
+    const turnstileRef = useRef(null);
+
     const { data, setData, post, processing, errors } = useForm({
         nik: '',
         password: '',
         remember: false,
+        turnstile_token: '',
     });
 
     const submit = (e) => {
         e.preventDefault();
-        post('/login');
+        post('/login', {
+            onError: () => {
+                turnstileRef.current?.reset();
+                setData('turnstile_token', '');
+            },
+        });
     };
 
     return (
         <div className="min-h-screen flex bg-app-bg font-sans">
-            <Head title="Masuk - Peta SDM" />
-            
+            <Head title="Masuk - Monitoring Operation" />
+
             {/* Kolom Kiri - Visual Panel (Image Background) */}
             <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-end p-12">
                 {/* Background Image */}
-                <div 
+                <div
                     className="absolute inset-0 bg-cover bg-center"
                     style={{ backgroundImage: "url('/welcomefr.jpg')" }}
                 ></div>
-                
+
                 {/* Dark Green Overlay */}
                 <div className="absolute inset-0 bg-corporate-dark/80 mix-blend-multiply"></div>
                 <div className="absolute inset-0 bg-gradient-to-t from-corporate-dark/95 via-corporate-dark/40 to-transparent"></div>
-                
+
                 {/* Content at Bottom Left */}
                 <div className="relative z-10 w-full mb-8">
                     <h2 className="text-4xl font-extrabold text-white mb-4 uppercase tracking-wider">
-                        Peta SDM Operasional
+                        Monitoring Operation
                     </h2>
                     <p className="text-lg text-white/90 font-medium mb-1">
-                        Kelola SDM Perkebunan dengan Cerdas
+                        Sistem Monitoring Operasional Perkebunan
                     </p>
                     <p className="text-sm text-white/70">
                         First Resources
@@ -53,7 +63,7 @@ export default function Login() {
                         <p className="text-gray-500">Silakan masuk menggunakan NIK pegawai Anda untuk melanjutkan.</p>
                     </div>
 
-                    <form onSubmit={submit} className="space-y-6">
+                    <form onSubmit={submit} className="space-y-5">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">NIK Pegawai</label>
                             <input
@@ -81,20 +91,39 @@ export default function Login() {
                             {errors.password && <p className="text-red-500 text-sm mt-2 font-medium">{errors.password}</p>}
                         </div>
 
-
+                        {/* Cloudflare Turnstile Widget */}
+                        {turnstileEnabled && turnstileSiteKey && (
+                            <div className="pt-1">
+                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                                    Verifikasi Keamanan
+                                </label>
+                                <TurnstileWidget
+                                    ref={turnstileRef}
+                                    siteKey={turnstileSiteKey}
+                                    onVerify={(token) => setData('turnstile_token', token)}
+                                    onExpire={() => setData('turnstile_token', '')}
+                                    onError={() => setData('turnstile_token', '')}
+                                />
+                                {errors.turnstile_token && (
+                                    <p className="text-red-500 text-sm mt-1.5 font-medium">
+                                        {errors.turnstile_token}
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         <button
                             type="submit"
-                            disabled={processing}
-                            className="w-full bg-corporate-dark hover:bg-corporate-light text-white font-bold py-3.5 rounded-lg transition-colors disabled:opacity-70 mt-6 flex justify-center items-center gap-2"
+                            disabled={processing || (turnstileEnabled && turnstileSiteKey && !data.turnstile_token)}
+                            className="w-full bg-corporate-dark hover:bg-corporate-light text-white font-bold py-3.5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-6 flex justify-center items-center gap-2 cursor-pointer"
                         >
                             Masuk ke Sistem
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
                         </button>
                     </form>
-                    
+
                     <div className="mt-16 text-center">
-                        <p className="text-xs text-gray-400">&copy; {new Date().getFullYear()} Peta SDM - Internal System Portal</p>
+                        <p className="text-xs text-gray-400">&copy; {new Date().getFullYear()} Monitoring Operation - First Resources</p>
                     </div>
                 </div>
             </div>

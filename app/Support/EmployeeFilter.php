@@ -4,40 +4,60 @@ namespace App\Support;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 
 class EmployeeFilter
 {
     public static function apply(Builder $query, Request $request): Builder
     {
+        $getArrayInput = fn (string $key): array => collect(Arr::flatten((array) $request->input($key, [])))
+            ->filter(fn ($v) => $v !== null && $v !== '' && $v !== 'all')
+            ->values()
+            ->all();
 
-        if ($request->filled('region')) {
-            $query->whereIn('region', (array) $request->input('region'));
+        $regions = $getArrayInput('region');
+        if (! empty($regions)) {
+            $query->whereIn('region', $regions);
         }
-        if ($request->filled('group')) {
-            $query->whereIn('group', (array) $request->input('group'));
+
+        $groups = $getArrayInput('group');
+        if (! empty($groups)) {
+            $query->whereIn('group', $groups);
         }
-        if ($request->filled('company_id')) {
-            $query->whereIn('company_id', (array) $request->input('company_id'));
+
+        $companies = $getArrayInput('company_id');
+        if (! empty($companies)) {
+            $query->whereIn('company_id', $companies);
         }
-        if ($request->filled('location_id')) {
-            $query->whereIn('location_id', (array) $request->input('location_id'));
+
+        $locations = $getArrayInput('location_id');
+        if (! empty($locations)) {
+            $query->whereIn('location_id', $locations);
         }
-        if ($request->filled('organization_name')) {
-            $query->whereIn('organization_name', (array) $request->input('organization_name'));
+
+        $orgs = $getArrayInput('organization_name');
+        if (! empty($orgs)) {
+            $query->whereIn('organization_name', $orgs);
         }
-        if ($request->filled('job_level_code')) {
-            $query->whereIn('job_level_code', (array) $request->input('job_level_code'));
+
+        $jobLevels = $getArrayInput('job_level_code');
+        if (! empty($jobLevels)) {
+            $query->whereIn('job_level_code', $jobLevels);
         }
-        if ($request->filled('employment_type')) {
-            $query->whereIn('employment_type', (array) $request->input('employment_type'));
+
+        $empTypes = $getArrayInput('employment_type');
+        if (! empty($empTypes)) {
+            $query->whereIn('employment_type', $empTypes);
         }
-        if ($request->filled('gender')) {
-            $query->whereIn('gender', (array) $request->input('gender'));
+
+        $genders = $getArrayInput('gender');
+        if (! empty($genders)) {
+            $query->whereIn('gender', $genders);
         }
-        // Generation filter requires filtering by birth_date logic, which might be tricky in pure SQL.
-        // It's usually better handled locally, or we compute the min/max birth dates for generations.
-        if ($request->filled('generation')) {
-            $generations = (array) $request->input('generation');
+
+        $generations = $getArrayInput('generation');
+        if (! empty($generations)) {
             $config = config('sdm.generations', [
                 'Boomers' => 1964,
                 'Gen X' => 1980,

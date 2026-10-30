@@ -12,7 +12,7 @@ import { useState } from 'react';
 import { useCrossFilter } from '@/hooks/useCrossFilter';
 import { Calendar, Users, ArrowRight } from 'lucide-react';
 import { CohortDetailModal } from '@/Components/tenure/CohortDetailModal';
-import { StaffDetailModal } from '@/Components/staff/StaffDetailModal';
+import { StaffDetailDrawer } from '@/Components/staff/StaffDetailDrawer';
 
 function TenureSkeleton() {
     return (
@@ -238,9 +238,9 @@ export default function Tenure({ metrics }) {
                 />
             )}
 
-            {/* Modal Detail Profil Karyawan (Drilldown) */}
+            {/* Slide-over Drawer Detail Profil Karyawan (Drilldown) */}
             {selectedEmployeeId && (
-                <StaffDetailModal
+                <StaffDetailDrawer
                     employeeId={selectedEmployeeId}
                     onClose={() => setSelectedEmployeeId(null)}
                 />
