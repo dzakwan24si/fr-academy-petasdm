@@ -867,13 +867,13 @@ export default function UsersIndex({ users, filters, stats }) {
                                     {/* Nama Lengkap */}
                                     <div>
                                         <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                                            Nama Lengkap Beliau <span className="text-rose-500">*</span>
+                                            Nama Lengkap <span className="text-rose-500">*</span>
                                         </label>
                                         <input
                                             type="text"
                                             value={createForm.data.name}
                                             onChange={(e) => createForm.setData('name', e.target.value)}
-                                            placeholder="Contoh: Bpk. Bambang Sutrisno"
+                                            placeholder="Contoh: Bambang Sutrisno"
                                             className="w-full px-4 py-2.5 bg-slate-50 border border-gray-300 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 outline-none transition-all placeholder:text-gray-400"
                                             required={createForm.data.is_manual}
                                         />
