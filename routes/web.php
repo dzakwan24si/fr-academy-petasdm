@@ -271,3 +271,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/filter-options', [FilterOptionsController::class, 'index'])->name('filter-options');
     });
 });
+
+// Block public access to Vite manifest.json (Resolves Pentest finding C.3)
+Route::get('/build/manifest.json', function () {
+    abort(404);
+});
