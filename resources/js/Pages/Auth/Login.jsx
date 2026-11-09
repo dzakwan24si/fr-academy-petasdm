@@ -1,9 +1,11 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useForm, Head } from '@inertiajs/react';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 import TurnstileWidget from '@/Components/ui/TurnstileWidget';
 
 export default function Login({ turnstileSiteKey, turnstileEnabled = true }) {
     const turnstileRef = useRef(null);
+    const [showPassword, setShowPassword] = useState(false);
 
     const { data, setData, post, processing, errors } = useForm({
         nik: '',
@@ -60,18 +62,23 @@ export default function Login({ turnstileSiteKey, turnstileEnabled = true }) {
                             <img src="/logofr.png" alt="Logo" className="w-12 h-12 object-contain" />
                         </div>
                         <h1 className="text-3xl font-bold text-corporate-dark mb-3">Selamat Datang</h1>
-                        <p className="text-gray-500">Silakan masuk menggunakan NIK pegawai Anda untuk melanjutkan.</p>
+                        <p className="text-gray-500">Silakan masuk menggunakan kredensial FR Academy Anda.</p>
                     </div>
 
                     <form onSubmit={submit} className="space-y-5">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">NIK Pegawai</label>
+                            <label htmlFor="nik" className="block text-sm font-semibold text-gray-700 mb-2">
+                                Email atau NIK
+                            </label>
                             <input
+                                id="nik"
+                                name="nik"
                                 type="text"
+                                autoComplete="username"
                                 value={data.nik}
                                 onChange={e => setData('nik', e.target.value)}
                                 className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-corporate-light focus:border-corporate-light outline-none transition-all placeholder:text-gray-400"
-                                placeholder="Masukkan NIK"
+                                placeholder="Masukkan Email atau NIK Anda"
                                 required
                                 autoFocus
                             />
@@ -79,19 +86,49 @@ export default function Login({ turnstileSiteKey, turnstileEnabled = true }) {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Kata Sandi</label>
-                            <input
-                                type="password"
-                                value={data.password}
-                                onChange={e => setData('password', e.target.value)}
-                                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-corporate-light focus:border-corporate-light outline-none transition-all placeholder:text-gray-400"
-                                placeholder="Masukkan kata sandi"
-                                required
-                            />
+                            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                                Kata Sandi
+                            </label>
+                            <div className="relative">
+                                <input
+                                    id="password"
+                                    name="password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    autoComplete="current-password"
+                                    value={data.password}
+                                    onChange={e => setData('password', e.target.value)}
+                                    className="w-full px-4 py-3 pr-11 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-corporate-light focus:border-corporate-light outline-none transition-all placeholder:text-gray-400"
+                                    placeholder="Masukkan kata sandi"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer"
+                                    aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'}
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
                             {errors.password && <p className="text-red-500 text-sm mt-2 font-medium">{errors.password}</p>}
                         </div>
 
-                        {/* Cloudflare Turnstile Widget */}
+                        {/* Ingat Saya (Remember Me) */}
+                        <div className="flex items-center">
+                            <input
+                                id="remember_me"
+                                name="remember"
+                                type="checkbox"
+                                checked={data.remember}
+                                onChange={e => setData('remember', e.target.checked)}
+                                className="h-4 w-4 text-corporate-dark focus:ring-corporate-light border-gray-300 rounded cursor-pointer accent-[#004D40]"
+                            />
+                            <label htmlFor="remember_me" className="ml-2 block text-sm text-gray-600 font-medium cursor-pointer select-none">
+                                Ingat Saya
+                            </label>
+                        </div>
+
+                        {/* Cloudflare Turnstile Widget (Jika Diaktifkan) */}
                         {turnstileEnabled && turnstileSiteKey && (
                             <div className="pt-1">
                                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
@@ -115,10 +152,10 @@ export default function Login({ turnstileSiteKey, turnstileEnabled = true }) {
                         <button
                             type="submit"
                             disabled={processing || (turnstileEnabled && turnstileSiteKey && !data.turnstile_token)}
-                            className="w-full bg-corporate-dark hover:bg-corporate-light text-white font-bold py-3.5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-6 flex justify-center items-center gap-2 cursor-pointer"
+                            className="w-full bg-corporate-dark hover:bg-corporate-light text-white font-bold py-3.5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-6 flex justify-center items-center gap-2 cursor-pointer shadow-sm hover:shadow"
                         >
                             Masuk ke Sistem
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
+                            <LogIn size={18} />
                         </button>
                     </form>
 

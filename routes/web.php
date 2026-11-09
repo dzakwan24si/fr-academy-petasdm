@@ -83,11 +83,14 @@ Route::middleware('guest')->group(function () {
             }
         }
 
-        $user = User::where('nik', $credentials['nik'])->first();
+        $login = $credentials['nik'];
+        $user = User::where('nik', $login)
+            ->orWhere('email', $login)
+            ->first();
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             return back()->withErrors([
-                'nik' => 'NIK atau kata sandi yang Anda masukkan tidak sesuai.',
+                'nik' => 'Email/NIK atau kata sandi yang Anda masukkan tidak sesuai.',
             ]);
         }
 

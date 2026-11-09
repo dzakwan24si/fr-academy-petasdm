@@ -37,8 +37,8 @@
       "_createLucideIcon-xZr7rNLS.js"
     ]
   },
-  "_FilterBar-3qOPXAQC.js": {
-    "file": "assets/FilterBar-3qOPXAQC.js",
+  "_FilterBar-CWaorWDp.js": {
+    "file": "assets/FilterBar-CWaorWDp.js",
     "name": "FilterBar",
     "imports": [
       "_rolldown-runtime-hePW80VL.js",
@@ -169,8 +169,8 @@
       "_colors-DIH8WsCM.js"
     ]
   },
-  "_StaffDetailPane-B22-EXDk.js": {
-    "file": "assets/StaffDetailPane-B22-EXDk.js",
+  "_StaffDetailPane-Cxam5d25.js": {
+    "file": "assets/StaffDetailPane-Cxam5d25.js",
     "name": "StaffDetailPane",
     "imports": [
       "_rolldown-runtime-hePW80VL.js",
@@ -289,6 +289,13 @@
   "_eye-CdLnczJM.js": {
     "file": "assets/eye-CdLnczJM.js",
     "name": "eye",
+    "imports": [
+      "_createLucideIcon-xZr7rNLS.js"
+    ]
+  },
+  "_eye-off-Br9aIIjT.js": {
+    "file": "assets/eye-off-Br9aIIjT.js",
+    "name": "eye-off",
     "imports": [
       "_createLucideIcon-xZr7rNLS.js"
     ]
@@ -421,13 +428,13 @@
       "_createLucideIcon-xZr7rNLS.js"
     ]
   },
-  "_useCrossFilter-B-tOZMTO.js": {
-    "file": "assets/useCrossFilter-B-tOZMTO.js",
+  "_useCrossFilter-DCS-uFGY.js": {
+    "file": "assets/useCrossFilter-DCS-uFGY.js",
     "name": "useCrossFilter",
     "imports": [
       "_jsx-runtime-COlB3k8A.js",
       "_BarChart-BPTZQinU.js",
-      "_FilterBar-3qOPXAQC.js",
+      "_FilterBar-CWaorWDp.js",
       "_format-CgTlbIPI.js",
       "_colors-DIH8WsCM.js"
     ]
@@ -447,7 +454,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-CAJgnhiS.css",
+    "file": "assets/app-BYah8Yyr.css",
     "name": "app",
     "names": [
       "app.css"
@@ -480,7 +487,7 @@
     ]
   },
   "resources/js/Pages/Admin/Users.jsx": {
-    "file": "assets/Users-TGC0qwmG.js",
+    "file": "assets/Users-D848kmie.js",
     "name": "Users",
     "src": "resources/js/Pages/Admin/Users.jsx",
     "isDynamicEntry": true,
@@ -496,6 +503,7 @@
       "_trash-ZnIjyNVg.js",
       "_circle-check-Dp11jwg7.js",
       "_circle-x-BG4JaEwS.js",
+      "_eye-off-Br9aIIjT.js",
       "_eye-CdLnczJM.js",
       "_key-round-C0Y3FZhX.js",
       "_plus-C7lCDiKu.js",
@@ -508,17 +516,20 @@
     ]
   },
   "resources/js/Pages/Auth/Login.jsx": {
-    "file": "assets/Login-DAxttrt6.js",
+    "file": "assets/Login-CxjxR-lO.js",
     "name": "Login",
     "src": "resources/js/Pages/Auth/Login.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_rolldown-runtime-hePW80VL.js",
-      "_jsx-runtime-COlB3k8A.js"
+      "_jsx-runtime-COlB3k8A.js",
+      "_createLucideIcon-xZr7rNLS.js",
+      "_eye-off-Br9aIIjT.js",
+      "_eye-CdLnczJM.js"
     ]
   },
   "resources/js/Pages/Combined.jsx": {
-    "file": "assets/Combined-BlFzzl1N.js",
+    "file": "assets/Combined-CkyH-uBr.js",
     "name": "Combined",
     "src": "resources/js/Pages/Combined.jsx",
     "isDynamicEntry": true,
@@ -529,17 +540,17 @@
       "_AppLayout-DlMYz5RD.js",
       "_chevron-left-_yi2sboE.js",
       "_chevron-right-DoacCeJw.js",
-      "_FilterBar-3qOPXAQC.js",
+      "_FilterBar-CWaorWDp.js",
       "_ChartCard-DHDoFlgl.js",
       "_InfoTooltip-CVV1b0o1.js",
       "_search-Cf5ZkYTX.js",
       "_format-CgTlbIPI.js",
       "_colors-DIH8WsCM.js",
-      "_useCrossFilter-B-tOZMTO.js"
+      "_useCrossFilter-DCS-uFGY.js"
     ]
   },
   "resources/js/Pages/Company/Index.jsx": {
-    "file": "assets/Index-DaBg6IuI.js",
+    "file": "assets/Index-BwNBzNPV.js",
     "name": "Index",
     "src": "resources/js/Pages/Company/Index.jsx",
     "isDynamicEntry": true,
@@ -559,7 +570,7 @@
     ]
   },
   "resources/js/Pages/Company/Show.jsx": {
-    "file": "assets/Show-OZLOi59p.js",
+    "file": "assets/Show-BL2jdo-l.js",
     "name": "Show",
     "src": "resources/js/Pages/Company/Show.jsx",
     "isDynamicEntry": true,
@@ -570,7 +581,7 @@
       "resources/js/app.jsx",
       "_createLucideIcon-xZr7rNLS.js",
       "_arrow-right-DdgTMvAu.js",
-      "_StaffDetailPane-B22-EXDk.js",
+      "_StaffDetailPane-Cxam5d25.js",
       "_briefcase-DmoY-M6V.js",
       "_AppLayout-DlMYz5RD.js",
       "_EmployeeAvatar-Wxds7-yf.js",
@@ -592,7 +603,7 @@
     ]
   },
   "resources/js/Pages/Dashboard.jsx": {
-    "file": "assets/Dashboard-BTRMSCzc.js",
+    "file": "assets/Dashboard-DF2LsdGA.js",
     "name": "Dashboard",
     "src": "resources/js/Pages/Dashboard.jsx",
     "isDynamicEntry": true,
@@ -600,39 +611,39 @@
       "_jsx-runtime-COlB3k8A.js",
       "_createLucideIcon-xZr7rNLS.js",
       "_AppLayout-DlMYz5RD.js",
-      "_FilterBar-3qOPXAQC.js",
+      "_FilterBar-CWaorWDp.js",
       "_ChartCard-DHDoFlgl.js",
       "_InfoTooltip-CVV1b0o1.js",
       "_sparkles-iovSF2Ra.js",
       "_user-check-BcXO_jLY.js",
       "_colors-DIH8WsCM.js",
-      "_useCrossFilter-B-tOZMTO.js",
+      "_useCrossFilter-DCS-uFGY.js",
       "_KpiCard-CsHqMPZu.js",
       "_StackedBar-DSBk7FbS.js",
       "_LineTrend-DmKoAIWL.js"
     ]
   },
   "resources/js/Pages/Demographics.jsx": {
-    "file": "assets/Demographics-DfgsQC7P.js",
+    "file": "assets/Demographics-D2kNKF7W.js",
     "name": "Demographics",
     "src": "resources/js/Pages/Demographics.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_jsx-runtime-COlB3k8A.js",
       "_AppLayout-DlMYz5RD.js",
-      "_FilterBar-3qOPXAQC.js",
+      "_FilterBar-CWaorWDp.js",
       "_ChartCard-DHDoFlgl.js",
       "_Heatmap-CbFosRDJ.js",
       "_PopulationPyramid-DzuRrNrA.js",
       "_format-CgTlbIPI.js",
       "_colors-DIH8WsCM.js",
-      "_useCrossFilter-B-tOZMTO.js",
+      "_useCrossFilter-DCS-uFGY.js",
       "_StackedBar-DSBk7FbS.js",
       "_Histogram-D_E0pHQS.js"
     ]
   },
   "resources/js/Pages/Employees/Index.jsx": {
-    "file": "assets/Index--Ad4616Y.js",
+    "file": "assets/Index-CafQHhOD.js",
     "name": "Index",
     "src": "resources/js/Pages/Employees/Index.jsx",
     "isDynamicEntry": true,
@@ -640,12 +651,12 @@
       "_rolldown-runtime-hePW80VL.js",
       "_jsx-runtime-COlB3k8A.js",
       "_createLucideIcon-xZr7rNLS.js",
-      "_StaffDetailPane-B22-EXDk.js",
+      "_StaffDetailPane-Cxam5d25.js",
       "_AppLayout-DlMYz5RD.js",
       "_EmployeeAvatar-Wxds7-yf.js",
       "_chevron-left-_yi2sboE.js",
       "_chevron-right-DoacCeJw.js",
-      "_FilterBar-3qOPXAQC.js",
+      "_FilterBar-CWaorWDp.js",
       "_download-DDKbU4I1.js",
       "_search-Cf5ZkYTX.js",
       "_table-C--Rr6s0.js",
@@ -716,24 +727,24 @@
     ]
   },
   "resources/js/Pages/Retirement.jsx": {
-    "file": "assets/Retirement-FNpSnG4w.js",
+    "file": "assets/Retirement-BNtYJZiy.js",
     "name": "Retirement",
     "src": "resources/js/Pages/Retirement.jsx",
     "isDynamicEntry": true,
     "imports": [
       "_jsx-runtime-COlB3k8A.js",
       "_AppLayout-DlMYz5RD.js",
-      "_FilterBar-3qOPXAQC.js",
+      "_FilterBar-CWaorWDp.js",
       "_ChartCard-DHDoFlgl.js",
       "_InfoTooltip-CVV1b0o1.js",
       "_format-CgTlbIPI.js",
       "_colors-DIH8WsCM.js",
-      "_useCrossFilter-B-tOZMTO.js",
+      "_useCrossFilter-DCS-uFGY.js",
       "_Histogram-D_E0pHQS.js"
     ]
   },
   "resources/js/Pages/Tenure.jsx": {
-    "file": "assets/Tenure-W2bYUfff.js",
+    "file": "assets/Tenure-CQ3QHr5I.js",
     "name": "Tenure",
     "src": "resources/js/Pages/Tenure.jsx",
     "isDynamicEntry": true,
@@ -742,14 +753,14 @@
       "_jsx-runtime-COlB3k8A.js",
       "_createLucideIcon-xZr7rNLS.js",
       "_arrow-right-DdgTMvAu.js",
-      "_StaffDetailPane-B22-EXDk.js",
+      "_StaffDetailPane-Cxam5d25.js",
       "_briefcase-DmoY-M6V.js",
       "_AppLayout-DlMYz5RD.js",
       "_calendar-zyCYOQOW.js",
       "_EmployeeAvatar-Wxds7-yf.js",
       "_chevron-left-_yi2sboE.js",
       "_chevron-right-DoacCeJw.js",
-      "_FilterBar-3qOPXAQC.js",
+      "_FilterBar-CWaorWDp.js",
       "_eye-CdLnczJM.js",
       "_ChartCard-DHDoFlgl.js",
       "_map-pin-BngwwIoS.js",
@@ -760,13 +771,13 @@
       "_users-2uzA4N2w.js",
       "_format-CgTlbIPI.js",
       "_colors-DIH8WsCM.js",
-      "_useCrossFilter-B-tOZMTO.js",
+      "_useCrossFilter-DCS-uFGY.js",
       "_LineTrend-DmKoAIWL.js",
       "_Histogram-D_E0pHQS.js"
     ]
   },
   "resources/js/Pages/Training.jsx": {
-    "file": "assets/Training-Z92N2gx-.js",
+    "file": "assets/Training-5h5h-IVl.js",
     "name": "Training",
     "src": "resources/js/Pages/Training.jsx",
     "isDynamicEntry": true,
@@ -781,7 +792,7 @@
       "_chart-no-axes-column-DQawoIKk.js",
       "_chevron-left-_yi2sboE.js",
       "_chevron-right-DoacCeJw.js",
-      "_FilterBar-3qOPXAQC.js",
+      "_FilterBar-CWaorWDp.js",
       "_clock-sb4NCd15.js",
       "_graduation-cap-Cy3RQnYl.js",
       "_ChartCard-DHDoFlgl.js",
@@ -789,14 +800,14 @@
       "_users-2uzA4N2w.js",
       "_format-CgTlbIPI.js",
       "_colors-DIH8WsCM.js",
-      "_useCrossFilter-B-tOZMTO.js",
+      "_useCrossFilter-DCS-uFGY.js",
       "_KpiCard-CsHqMPZu.js",
       "_StackedBar-DSBk7FbS.js",
       "_LineTrend-DmKoAIWL.js"
     ]
   },
   "resources/js/Pages/Training/Data.jsx": {
-    "file": "assets/Data-Bikqd-AM.js",
+    "file": "assets/Data-Bkzo3hHV.js",
     "name": "Data",
     "src": "resources/js/Pages/Training/Data.jsx",
     "isDynamicEntry": true,
@@ -812,7 +823,7 @@
       "_chart-no-axes-column-DQawoIKk.js",
       "_chevron-left-_yi2sboE.js",
       "_chevron-right-DoacCeJw.js",
-      "_FilterBar-3qOPXAQC.js",
+      "_FilterBar-CWaorWDp.js",
       "_trash-ZnIjyNVg.js",
       "_clock-sb4NCd15.js",
       "_download-DDKbU4I1.js",
@@ -821,7 +832,7 @@
     ]
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-BZILD3Qw.js",
+    "file": "assets/app-DZMiZmrn.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
@@ -849,7 +860,7 @@
       "resources/js/Pages/Training.jsx"
     ],
     "css": [
-      "assets/app-CAJgnhiS.css"
+      "assets/app-BYah8Yyr.css"
     ]
   }
 }
