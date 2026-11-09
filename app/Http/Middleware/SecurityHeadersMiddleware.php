@@ -49,9 +49,7 @@ class SecurityHeadersMiddleware
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
         // HSTS (HTTP Strict Transport Security)
-        if ($request->isSecure() || $request->header('x-forwarded-proto') === 'https' || app()->isProduction()) {
-            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-        }
+        $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
         return $response;
     }
