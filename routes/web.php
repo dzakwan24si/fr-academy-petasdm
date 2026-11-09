@@ -53,6 +53,8 @@ Route::middleware('guest')->group(function () {
         }
 
         $credentials = $request->validate($rules, [
+            'nik.required' => 'Nomor Induk Karyawan (NIK) wajib diisi.',
+            'password.required' => 'Kata sandi wajib diisi.',
             'turnstile_token.required' => 'Harap selesaikan verifikasi keamanan (Cloudflare).',
         ]);
 
@@ -83,14 +85,11 @@ Route::middleware('guest')->group(function () {
             }
         }
 
-        $login = $credentials['nik'];
-        $user = User::where('nik', $login)
-            ->orWhere('email', $login)
-            ->first();
+        $user = User::where('nik', $credentials['nik'])->first();
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             return back()->withErrors([
-                'nik' => 'Email/NIK atau kata sandi yang Anda masukkan tidak sesuai.',
+                'nik' => 'Nomor Induk Karyawan (NIK) atau kata sandi yang Anda masukkan tidak sesuai.',
             ]);
         }
 

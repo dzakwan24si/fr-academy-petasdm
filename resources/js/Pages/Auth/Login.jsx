@@ -62,13 +62,13 @@ export default function Login({ turnstileSiteKey, turnstileEnabled = true }) {
                             <img src="/logofr.png" alt="Logo" className="w-12 h-12 object-contain" />
                         </div>
                         <h1 className="text-3xl font-bold text-corporate-dark mb-3">Selamat Datang</h1>
-                        <p className="text-gray-500">Silakan masuk menggunakan kredensial FR Academy Anda.</p>
+                        <p className="text-gray-500">Silakan masuk menggunakan Nomor Induk Karyawan (NIK) Anda untuk melanjutkan.</p>
                     </div>
 
                     <form onSubmit={submit} className="space-y-5">
                         <div>
                             <label htmlFor="nik" className="block text-sm font-semibold text-gray-700 mb-2">
-                                Email atau NIK
+                                Nomor Induk Karyawan (NIK)
                             </label>
                             <input
                                 id="nik"
@@ -78,7 +78,7 @@ export default function Login({ turnstileSiteKey, turnstileEnabled = true }) {
                                 value={data.nik}
                                 onChange={e => setData('nik', e.target.value)}
                                 className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-corporate-light focus:border-corporate-light outline-none transition-all placeholder:text-gray-400"
-                                placeholder="Masukkan Email atau NIK Anda"
+                                placeholder="Masukkan Nomor Induk Karyawan (NIK)"
                                 required
                                 autoFocus
                             />
