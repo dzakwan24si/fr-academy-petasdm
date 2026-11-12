@@ -10,7 +10,6 @@ use App\Http\Controllers\ResignationController;
 use App\Http\Controllers\TrainingRecordController;
 use App\Models\Company;
 use App\Models\User;
-use App\Services\CombinedMetrics;
 use App\Services\InsightBuilder;
 use App\Services\ResignationMetrics;
 use App\Services\TenureMetrics;
@@ -206,10 +205,6 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('masa-kerja');
 
-    Route::get('/pensiun', function () {
-        return redirect()->route('dashboard');
-    })->name('pensiun');
-
     Route::get('/pelatihan', function (Request $request, TrainingFilter $filter) {
         $metricsService = new TrainingMetrics;
 
@@ -221,15 +216,6 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/pelatihan/data', [TrainingRecordController::class, 'index'])->name('pelatihan.data');
     Route::get('/pelatihan/data/export', [TrainingRecordController::class, 'export'])->name('pelatihan.data.export');
-
-    Route::get('/analisis-gabungan', function (Request $request, EmployeeFilter $filter) {
-        $metricsService = new CombinedMetrics;
-
-        return Inertia::render('Combined', [
-            'metrics' => Inertia::defer(fn () => $metricsService->getMetrics($request, $filter)),
-            'filters' => $request->all(),
-        ]);
-    })->name('analisis-gabungan');
 
     // Karyawan route
     Route::get('/karyawan', [EmployeeDirectoryController::class, 'index'])->name('karyawan');
